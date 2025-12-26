@@ -1,0 +1,38 @@
+/* ============================================
+   Bouton "Geo Taguer"
+   geo_tag_editor plugin
+   ============================================ */
+
+/* Icône SVG dans le bouton */
+#geotag-open-editor svg {
+  vertical-align: middle;
+  margin-right: 4px;
+}
+
+/* Pour les thèmes Bootstrap : adapter le contraste du texte */
+.btn#geotag-open-editor {
+  color: #fff !important;
+}
+
+.btn#geotag-open-editor:hover {
+  filter: brightness(0.9);
+}
+
+/* Pour le thème par défaut Piwigo uniquement */
+.pwg-button#geotag-open-editor {
+  background: #2196F3;
+  color: #fff;
+  border: 1px solid #1976D2;
+}
+
+.pwg-button#geotag-open-editor:hover {
+  background: #1976D2;
+}
+
+.pwg-button#geotag-open-editor .pwg-icon {
+  color: inherit;
+}
+
+.pwg-button#geotag-open-editor .pwg-button-text {
+  color: inherit;
+}
