@@ -1,16 +1,17 @@
 <?php
 /*
 Plugin Name: geo_tag_editor
-Version: 1.1C
+Version: 1.1d
 Description: Gestion des coordonnées GPS dans les métadonnées
-Plugin URI: https://piwigo.org/
+Plugin URI: 
 Author: Charles69
 Has Settings: webmaster
 */
 
 //============= VERSIONS ============================================
 /*
-version 1.1C - en cours
+version 1.1d - 1ère publication
+version 1.1C - 29/12/2025
     leaflet 1.9.4 isolée pour geo_tag_editor
 
 version 1.1B - 28/12/2025 
@@ -166,7 +167,7 @@ function geo_tag_load_jquery()
 }
 
 // ==================== CHARGER LE CSS ====================
-add_event_handler('loc_begin_page_header', 'geo_tag_load_css');
+add_event_handler('loc_begin_page_header', 'geo_tag_load_css',);
 function geo_tag_load_css()
 {
   global $template, $page;

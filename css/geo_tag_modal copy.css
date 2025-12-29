@@ -10,7 +10,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgb(0 0 0 / 95%);
+  background: rgba(0, 0, 0, 0.95);
   z-index: 9998;
 }
 
@@ -31,8 +31,8 @@
    HEADER
    ============================================ */
 #geotag-modal .modal-header {
-  background: #536c7f;
-  color: #ffffff;
+  background: #2195f3;
+  color: white;
   padding: 12px 20px;
   display: flex;
   justify-content: space-between;
@@ -48,7 +48,7 @@
 #geotag-modal .modal-header button {
   background: none;
   border: none;
-  color: #ffffff;
+  color: white;
   font-size: 28px;
   cursor: pointer;
   padding: 0;
@@ -62,14 +62,14 @@
    ============================================ */
 #geotag-modal .modal-instructions {
   padding: 10px 20px;
-  background: #848181;
-  border-bottom: 1px solid #000000;
+  background: #2a2a2a;
+  border-bottom: 1px solid #444;
   flex-shrink: 0;
 }
 
 #geotag-modal .modal-instructions p {
   margin: 0;
-  color: #000000;
+  color: #ccc;
   font-size: 14px;
 }
 
@@ -85,22 +85,22 @@
 
 /* Zone image (gauche) */
 #geotag-modal .modal-image-area {
-  width: 600px;
+  width: 400px;
   padding: 20px;
-  background: #c6c6c6;
+  background: #1a1a1a;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
   overflow-y: auto;
   flex-shrink: 0;
-  border-right: 1px solid #686666;
+  border-right: 1px solid #444;
 }
 
 #geotag-modal .modal-image-area img {
   max-width: 100%;
   height: auto;
-  border: 2px solid #414141;
+  border: 2px solid #444;
   border-radius: 4px;
 }
 
@@ -109,17 +109,15 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: #737373;
+  background: #2a2a2a;
   overflow: hidden;
 }
 
-
-
-/* Barre de recherche --------------------------------  */
+/* Barre de recherche */
 #geotag-modal .map-search-bar {
-  padding: 10px;
-  background: #b0b0b0;
-  border-bottom: 1px solid #9d9d9d;
+  padding: 15px;
+  background: #333;
+  border-bottom: 1px solid #444;
   flex-shrink: 0;
 }
 
@@ -134,18 +132,18 @@
   padding: 10px;
   border: 1px solid #555;
   border-radius: 4px;
-  background: #959595;
-  color: #030303;
-  font-size: 16px;
+  background: #1a1a1a;
+  color: #fff;
+  font-size: 14px;
 }
 
 #geotag-modal #geotag-search-input::placeholder {
-  color: #5e5656;
+  color: #888;
 }
 
 #geotag-modal #geotag-search-btn {
   padding: 10px 20px;
-  background: #2874b0;
+  background: #2196F3;
   color: white;
   border: none;
   border-radius: 4px;
@@ -154,16 +152,16 @@
 }
 
 #geotag-modal #geotag-search-btn:hover {
-  background: #0a7def;
+  background: #1976D2;
 }
 
-/* Résultats de recherche ------------------------------- */
+/* Résultats de recherche */
 #geotag-modal #geotag-search-results {
-  max-height: 250px;
+  max-height: 200px;
   overflow-y: auto;
   margin-top: 10px;
-  background: #acbbe2; /* fond des résultats*/
-  border: 1px solid #9b9b9b;
+  background: #1a1a1a;
+  border: 1px solid #555;
   border-radius: 4px;
   display: none;
 }
@@ -173,14 +171,14 @@
 }
 
 #geotag-modal .geotag-search-result-item {
-  padding: 5px;
+  padding: 10px;
   border-bottom: 1px solid #444;
   cursor: pointer;
-  color: #ffffff;
+  color: #fff;
 }
 
 #geotag-modal .geotag-search-result-item:hover {
-  background: #6b88e7; /* survol des résultats */
+  background: #333;
 }
 
 #geotag-modal .geotag-search-result-item:last-child {
@@ -189,29 +187,27 @@
 
 #geotag-modal .geotag-search-result-name {
   font-weight: bold;
-  color: #1b415f; /* 1ere ligne de résultat */
+  color: #2196F3;
 }
 
 #geotag-modal .geotag-search-result-display {
   font-size: 12px;
-  color: #183372; /* 2ème ligne de résultat */
+  color: #aaa;
 }
-
-
 
 /* Carte Leaflet */
 #geotag-modal #geotag-map {
   flex: 1;
   width: 100%;
-  background: #030303;
+  background: #1a1a1a;
 }
 
 /* Sidebar : info GPS */
 #geotag-modal .modal-sidebar {
   width: 300px;
   padding: 20px;
-  background: #878282;
-  border-left: 1px solid #666666;
+  background: #2a2a2a;
+  border-left: 1px solid #444;
   overflow-y: auto;
   flex-shrink: 0;
 }
@@ -219,13 +215,13 @@
 #geotag-modal .modal-sidebar h4 {
   margin-top: 0;
   padding-bottom: 10px;
-  border-bottom: 2px solid #0f7dd5;
+  border-bottom: 2px solid #2196F3;
   color: #fff;
 }
 
 /* Info GPS */
 #geotag-modal .gps-info {
-  background: #222222;
+  background: #333;
   padding: 15px;
   border-radius: 4px;
   margin-bottom: 15px;
@@ -245,11 +241,11 @@
 
 #geotag-modal .gps-info-label {
   font-weight: bold;
-  color: #b3b2b2;
+  color: #aaa;
 }
 
 #geotag-modal .gps-info-value {
-  color: #6fbfff;
+  color: #2196F3;
   font-family: monospace;
 }
 
@@ -277,7 +273,7 @@
 }
 
 #geotag-modal #geotag-copy-position {
-  background: #37ba3c;
+  background: #4CAF50;
   color: white;
 }
 
@@ -314,7 +310,7 @@
 }
 
 #geotag-modal #geotag-google-lens {
-  background: #6e8dc1;
+  background: #4285F4;
   color: white;
 }
 
@@ -385,7 +381,7 @@
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: bold;
 }
 
@@ -399,7 +395,7 @@
    ============================================ */
 #geotag-modal .modal-footer {
   padding: 12px 20px;
-  background: #7f7f7f;
+  background: #2a2a2a;
   border-top: 1px solid #444;
   display: flex;
   justify-content: space-between;
@@ -428,12 +424,12 @@
 }
 
 #geotag-modal #geotag-remove-gps {
-  background: #fd5c5c;
+  background: #ff4444;
   color: white;
 }
 
 #geotag-modal #geotag-remove-gps:hover {
-  background: #f71818;
+  background: #cc0000;
 }
 
 #geotag-modal #geotag-remove-gps:disabled {
@@ -452,14 +448,14 @@
 }
 
 #geotag-modal #geotag-save-gps {
-  background: #2484d1;
+  background: #2196F3;
   color: white;
   font-weight: bold;
   padding: 10px 24px;
 }
 
 #geotag-modal #geotag-save-gps:hover {
-  background: #0f5ead;
+  background: #1976D2;
 }
 
 #geotag-modal #geotag-save-gps:disabled {

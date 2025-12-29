@@ -7,6 +7,17 @@
   $(document).ready(function() {
     
     console.log('Geo Tag Editor: Script chargé');
+
+  // Nettoyer les anciennes clés localStorage (migration)
+  try {
+    if (localStorage.getItem('geotag_last_lat') || localStorage.getItem('geotag_last_lon')) {
+      console.log('Geo Tag Editor: Migration anciennes clés localStorage');
+      localStorage.removeItem('geotag_last_lat');
+      localStorage.removeItem('geotag_last_lon');
+    }
+  } catch(e) {}
+//--------------------------------------------------  
+
     
     var map = null;
     var marker = null;
@@ -254,80 +265,146 @@ $('#geotag-copy-coords').click(copyCoordinatesToClipboard);
     }
 
     // ==================== INITIALISER LA CARTE OPENSTREETMAP ====================
-    function initMap() {
-      // IMPORTANT : Utiliser GeoTagLeaflet (notre version isolée)
-      var L = GeoTagLeaflet;
-      
-      // Position par défaut Lyon    (Paris)
-      var defaultLat = 45.7578;  // 48.8566;
-      var defaultLon = 4.8320; //2.3522;
-      var defaultZoom = 10; // Zoom réduit pour charger moins de tuiles
-      
-      // Si l'image a déjà des coordonnées GPS, les utiliser
-      if (hasGPS && currentLatitude && currentLongitude) {
-        defaultLat = currentLatitude;
-        defaultLon = currentLongitude;
-        defaultZoom = 13; // Zoom réduit de 15 à 13
-      }
-      
-      // Créer la carte
-      map = L.map('geotag-map').setView([defaultLat, defaultLon], defaultZoom);
-      
-      // Ajouter les tuiles OpenStreetMap
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 19
-      }).addTo(map);
-      
-      // Si l'image a déjà des coordonnées, placer le marqueur
-      if (hasGPS && currentLatitude && currentLongitude) {
-        placeMarker(currentLatitude, currentLongitude);
-      }
-      
-      // Événement de clic sur la carte
-      map.on('click', function(e) {
-        placeMarker(e.latlng.lat, e.latlng.lng);
-      });
-    }
+// ==================== INITIALISER LA CARTE OPENSTREETMAP ====================
+function initMap() {
+  // IMPORTANT : Utiliser GeoTagLeaflet (notre version isolée)
+  var L = GeoTagLeaflet;
+  
+  // Position par défaut Lyon
+  var defaultLat = 45.7578;
+  var defaultLon = 4.8320;
+  var defaultZoom = 10;
+  
+  var centerLat, centerLon, centerZoom;
+  
+  // Si l'image a déjà des coordonnées GPS, les utiliser en priorité
+  if (hasGPS && currentLatitude && currentLongitude) {
+    centerLat = currentLatitude;
+    centerLon = currentLongitude;
+    centerZoom = 13;
     
-    // ==================== PLACER LE MARQUEUR ====================
-    function placeMarker(lat, lon) {
-      // IMPORTANT : Utiliser GeoTagLeaflet
-      var L = GeoTagLeaflet;
+    console.log('Geo Tag Editor: Photo avec GPS existant');
+  } else {
+    // Photo sans GPS : chercher la dernière position utilisée
+    try {
+      var lastPositionStr = localStorage.getItem('geotag_last_position');
       
-      // Supprimer le marqueur existant
-      if (marker) {
-        map.removeLayer(marker);
+      if (lastPositionStr) {
+        var lastPosition = JSON.parse(lastPositionStr);
+        var ageInHours = (Date.now() - lastPosition.timestamp) / (1000 * 60 * 60);
+        
+        // Expirer après 2h
+        if (ageInHours < 2) {
+          centerLat = lastPosition.lat;
+          centerLon = lastPosition.lon;
+          centerZoom = 13;
+          console.log('Geo Tag Editor: Utilisation dernière position (âge: ' + ageInHours.toFixed(1) + 'h)');
+        } else {
+          // Position trop ancienne, supprimer
+          localStorage.removeItem('geotag_last_position');
+          centerLat = defaultLat;
+          centerLon = defaultLon;
+          centerZoom = defaultZoom;
+          console.log('Geo Tag Editor: Position expirée (âge: ' + ageInHours.toFixed(1) + 'h), retour au défaut');
+        }
+      } else {
+        // Aucune position précédente : ville par défaut
+        centerLat = defaultLat;
+        centerLon = defaultLon;
+        centerZoom = defaultZoom;
+        console.log('Geo Tag Editor: Aucune position précédente, utilisation position par défaut');
       }
-      
-      // Créer un nouveau marqueur
-      marker = L.marker([lat, lon], {
-        draggable: true
-      }).addTo(map);
-      
-      // Mettre à jour les coordonnées
-      currentLatitude = lat;
-      currentLongitude = lon;
-      
-      // Événement de déplacement du marqueur
-      marker.on('dragend', function(e) {
-        var pos = marker.getLatLng();
-        currentLatitude = pos.lat;
-        currentLongitude = pos.lng;
-        updateGPSInfo();
-      });
-      
-      // Mettre à jour l'affichage
-      updateGPSInfo();
-      
-      // Activer le bouton de copie
-      $('#geotag-copy-position').prop('disabled', false);
-
-      // Activer le bouton réinitialiser si position originale existe
-      if (originalLatitude !== null && originalLongitude !== null) {
-        $('#geotag-reset-position').prop('disabled', false);
-      }
+    } catch(e) {
+      // Erreur localStorage : utiliser valeur par défaut
+      console.error('Geo Tag Editor: Erreur lecture localStorage:', e);
+      centerLat = defaultLat;
+      centerLon = defaultLon;
+      centerZoom = defaultZoom;
     }
+  }
+  
+  // Créer la carte
+  map = L.map('geotag-map').setView([centerLat, centerLon], centerZoom);
+  
+  // Ajouter les tuiles OpenStreetMap
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 19
+  }).addTo(map);
+  
+  // Si l'image a déjà des coordonnées, placer le marqueur
+  if (hasGPS && currentLatitude && currentLongitude) {
+    placeMarker(currentLatitude, currentLongitude);
+  }
+  
+  // Événement de clic sur la carte
+  map.on('click', function(e) {
+    placeMarker(e.latlng.lat, e.latlng.lng);
+  });
+}
+    
+// ==================== PLACER LE MARQUEUR ====================
+function placeMarker(lat, lon) {
+  // IMPORTANT : Utiliser GeoTagLeaflet
+  var L = GeoTagLeaflet;
+  
+  // Supprimer le marqueur existant
+  if (marker) {
+    map.removeLayer(marker);
+  }
+  
+  // Créer un nouveau marqueur
+  marker = L.marker([lat, lon], {
+    draggable: true
+  }).addTo(map);
+  
+  // Mettre à jour les coordonnées
+  currentLatitude = lat;
+  currentLongitude = lon;
+  
+  // Sauvegarder comme dernière position utilisée avec timestamp
+  try {
+    var positionData = {
+      lat: lat,
+      lon: lon,
+      timestamp: Date.now()
+    };
+    localStorage.setItem('geotag_last_position', JSON.stringify(positionData));
+    console.log('Geo Tag Editor: Dernière position sauvegardée:', lat, lon);
+  } catch(e) {
+    console.error('Cannot save last position to localStorage:', e);
+  }
+  
+  // Événement de déplacement du marqueur
+  marker.on('dragend', function(e) {
+    var pos = marker.getLatLng();
+    currentLatitude = pos.lat;
+    currentLongitude = pos.lng;
+    
+    // Sauvegarder aussi lors du déplacement avec timestamp
+    try {
+      var positionData = {
+        lat: pos.lat,
+        lon: pos.lng,
+        timestamp: Date.now()
+      };
+      localStorage.setItem('geotag_last_position', JSON.stringify(positionData));
+    } catch(e) {}
+    
+    updateGPSInfo();
+  });
+  
+  // Mettre à jour l'affichage
+  updateGPSInfo();
+  
+  // Activer le bouton de copie
+  $('#geotag-copy-position').prop('disabled', false);
+
+  // Activer le bouton réinitialiser si position originale existe
+  if (originalLatitude !== null && originalLongitude !== null) {
+    $('#geotag-reset-position').prop('disabled', false);
+  }
+}
     
     // ==================== RECHERCHER UN LIEU ====================
     function searchLocation() {
@@ -341,7 +418,7 @@ $('#geotag-copy-coords').click(copyCoordinatesToClipboard);
       console.log('Recherche:', query);
       
       // Afficher un message de chargement
-      $('#geotag-search-results').html('<div class="search-result-item">' + _('Recherche...') + '</div>').addClass('show');
+      $('#geotag-search-results').html('<div class="geotag-search-result-item">' + _('Recherche...') + '</div>').addClass('show');
       
       // Utiliser Nominatim (service de géocodage d'OpenStreetMap)
       var url = 'https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(query);
@@ -356,12 +433,12 @@ $('#geotag-copy-coords').click(copyCoordinatesToClipboard);
           if (results && results.length > 0) {
             displaySearchResults(results);
           } else {
-            $('#geotag-search-results').html('<div class="search-result-item">' + _('Aucun résultat trouvé') + '</div>');
+            $('#geotag-search-results').html('<div class="geotag-search-result-item">' + _('Aucun résultat trouvé') + '</div>');
           }
         },
         error: function(xhr, status, error) {
           console.error('Erreur recherche:', error);
-          $('#geotag-search-results').html('<div class="search-result-item">Erreur de recherche</div>');
+          $('#geotag-search-results').html('<div class="geotag-search-result-item">Erreur de recherche</div>');
         }
       });
     }
@@ -371,16 +448,16 @@ $('#geotag-copy-coords').click(copyCoordinatesToClipboard);
       var html = '';
       
       results.slice(0, 10).forEach(function(result) {
-        html += '<div class="search-result-item" data-lat="' + result.lat + '" data-lon="' + result.lon + '">';
-        html += '<div class="search-result-name">' + (result.name || result.display_name.split(',')[0]) + '</div>';
-        html += '<div class="search-result-display">' + result.display_name + '</div>';
+        html += '<div class="geotag-search-result-item" data-lat="' + result.lat + '" data-lon="' + result.lon + '">';
+        html += '<div class="geotag-search-result-name">' + (result.name || result.display_name.split(',')[0]) + '</div>';
+        html += '<div class="geotag-search-result-display">' + result.display_name + '</div>';
         html += '</div>';
       });
       
       $('#geotag-search-results').html(html).addClass('show');
       
       // Événement de clic sur un résultat
-      $('.search-result-item').click(function() {
+      $('.geotag-search-result-item').click(function() {
         var lat = parseFloat($(this).data('lat'));
         var lon = parseFloat($(this).data('lon'));
         
