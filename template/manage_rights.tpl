@@ -9,7 +9,7 @@
             <strong>{'Note'|@translate} :</strong> {'Les webmasters et administrateurs ont toujours un accès total, quel que soit le mode sélectionné.'|@translate}
         </p>
         
-        <form method="post" action="{$GEOTAGWRITE_ADMIN_URL}" id="rights_mode_form">
+        <form method="post" action="{$GEOTAG_ADMIN}" id="rights_mode_form">
             <input type="hidden" name="action" value="save_rights_config">
             
             <label style="display:block; margin-bottom:10px;">

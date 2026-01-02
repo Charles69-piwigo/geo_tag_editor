@@ -102,12 +102,17 @@
             <li>Copier les coordonnées pour les coller dans Google Maps</li>
             <li>Copier Coller une position d'une photo à une autre</li>
             <li>Modifier/Supprimer/Enregistrer les coordonnées GPS</li>
-            <li>Identifier une localisation avec Google Lens (la photo est téléchargéé automatiqement , déplacer là dans Google Lens )</li>
+            <li>Identifier une localisation avec Google Lens (la photo est téléchargée automatiqement , déplacer là dans Google Lens )</li>
         </ul>
         
         <h3>Droits d'accès</h3>
         <p>Pour pouvoir utiliser le plugin il faut être webmaster, administrateur ou un user appartenant au groupe GeoTag.</p>
         <p>Les droits des utilisateurs sont soit globaux, soit sur des albums à spécifier.</p>
+
+        <h3>Liste de lieux personnels</h3>
+        <p>C'est une option à activer dans l'onglet "lieux personnels"</p>
+        <p>Vous pouvez établir un liste de lieux géolocalisés prêt à l'emploi, disponible ensuite dans l'éditeur de géo tag</p>
+        <p>Vous pouvez importer dans cette liste les lieux de la liste perso de pwigo_openstreetmap.</p>
         
         <h3>Visualisation des résultats</h3>
         <p>Pour visualiser les résultats il faut installer/activer un plugin de géolocalisation compatible avec Piwigo, comme :</p>
@@ -180,6 +185,11 @@
         <h3>Access Rights</h3>
         <p>To use the plugin, you must be a webmaster, administrator, or a user belonging to the GeoTag group.</p>
         <p>User rights are either global or specific to particular albums.</p>
+
+        <h3>Personal Places List</h3>
+        <p>This is an option to enable in the "Personal Places" tab.</p>
+        <p>You can create a ready-to-use list of geolocated places, which will then be available in the geotag editor.</p>
+        <p>You can import places from pwigo_openstreetmap's personal list into this list.</p>
         
         <h3>Viewing Results</h3>
         <p>To view the results, you must install/activate a geolocation plugin compatible with Piwigo, such as:</p>

@@ -23,6 +23,7 @@
     var marker = null;
     var imageId = null;
     var imageSrc = null;
+    var imageFile = null; 
     var saveUrl = null;
     var currentLatitude = null;
     var currentLongitude = null;
@@ -32,6 +33,12 @@
     var originalLatitude = null;
     var originalLongitude = null;
     var originalAltitude = null;
+    var gpsSource = 'exif';
+
+    // Variables pour les lieux personnels
+    var allPlaces = [];           // Liste complète des lieux
+    var selectedPlace = null;     // Lieu actuellement sélectionné
+    var placesEnabled = false;    // Fonctionnalité activée ?
     
     // Notre référence à Leaflet isolé (définie dans main.inc.php via noConflict)
     var GeoTagLeaflet = window.GeoTagLeaflet;
@@ -89,15 +96,19 @@
       imageId = data.image_id;
       imageSrc = data.image_src;
       console.log('Image SRC reçu:', imageSrc);  
+      imageFile = data.image_file || 'Image #' + data.image_id;
+      console.log('Image file:', data.image_file, 'imageFile:', imageFile);
       saveUrl = data.save_url;
       hasGPS = data.has_gps;
-      currentLatitude = data.latitude;
-      currentLongitude = data.longitude;
-      currentAltitude = data.altitude;
+      gpsSource = data.gps_source || 'exif';
 
-      originalLatitude = data.latitude;
-      originalLongitude = data.longitude;
-      originalAltitude = data.altitude;
+ currentLatitude = data.latitude ? parseFloat(data.latitude) : null;
+currentLongitude = data.longitude ? parseFloat(data.longitude) : null;
+currentAltitude = data.altitude ? parseFloat(data.altitude) : null;
+
+ originalLatitude = data.latitude ? parseFloat(data.latitude) : null;
+originalLongitude = data.longitude ? parseFloat(data.longitude) : null;
+originalAltitude = data.altitude ? parseFloat(data.altitude) : null;
       
       console.log('Ouverture éditeur GPS:', {
         imageId: imageId,
@@ -122,7 +133,7 @@
     
     <!-- Header -->
     <div class="modal-header">
-      <h3>📍 ${_('Éditeur de géolocalisation')} - ${_('Image')} #${imageId}</h3>
+      <h3>📍 ${_('Éditeur de géolocalisation')} (#${imageId}) - ${imageFile}</h3>
       <button id="geotag-close-modal">&times;</button>
     </div>
     
@@ -177,7 +188,25 @@
     <button id="geotag-copy-position" disabled>📋 ${_('Copier la position')}</button>
     <button id="geotag-paste-position" disabled>📌 ${_('Coller la position')}</button>
   </div>
+
+
+  <!-- Lieux personnels -->
+  <div class="sidebar-places" id="geotag-places-block" style="display:none;">
+    <h3>${_('Lieux personnels')}</h3>
+    <div class="places-search">
+      <input type="text" 
+             id="geotag-place-search" 
+             placeholder="${_('Rechercher un lieu...')}"
+             autocomplete="off" />
+      <div id="geotag-places-dropdown" class="places-dropdown" style="display:none;"></div>
+    </div>
+    <div class="places-actions">
+      <button id="geotag-apply-place" class="btn-apply-place" disabled>✓ ${_('Appliquer')}</button>
+      <button id="geotag-add-place" class="btn-add-place" disabled>➕ ${_('Ajouter')}</button>
+    </div>
+  </div>
 </div>
+<!-- FIN SIDEBAR -->
 
 </div>
 <!-- FIN modal-content -->
@@ -206,6 +235,13 @@ $('body').append(modalHtml);
       
 // Initialiser la carte
 initMap();
+
+// Si des coordonnées existent (EXIF ou BDD), placer le marqueur
+if (currentLatitude && currentLongitude) {
+  setTimeout(function() {
+    placeMarker(currentLatitude, currentLongitude);
+  }, 500); // Petit délai pour que la carte soit bien chargée
+}
 
 // Mettre à jour l'affichage des coordonnées
 updateGPSInfo();
@@ -262,9 +298,23 @@ if (originalLatitude !== null && originalLongitude !== null) {
 // Événement copier coordonnées (bouton dans footer)
 $('#geotag-copy-coords').click(copyCoordinatesToClipboard);
 
+// Charger les lieux personnels
+      loadPersonalPlaces();
+
+        // Si les coordonnées viennent de la BDD, afficher un avertissement
+      if (gpsSource === 'database') {
+        setTimeout(function() {
+          showStatusMessage(
+            '⚠️ ' + _('Coordonnées trouvées en base de données mais pas dans la photo.') + ' ' +
+            _('Cliquez sur Enregistrer pour les écrire dans les métadonnées EXIF.'),
+            'warning'
+          );
+        }, 500); // Petit délai pour que la modale soit bien affichée
+      }    
+      
+      console.log('Geo Tag Editor: Modale ouverte');
     }
 
-    // ==================== INITIALISER LA CARTE OPENSTREETMAP ====================
 // ==================== INITIALISER LA CARTE OPENSTREETMAP ====================
 function initMap() {
   // IMPORTANT : Utiliser GeoTagLeaflet (notre version isolée)
@@ -508,6 +558,10 @@ function placeMarker(lat, lon) {
         
         $('#geotag-save-gps').prop('disabled', true);
       }
+
+        // Mettre à jour le bouton Ajouter des lieux
+        updateAddPlaceButton();
+
     }
     
     // ==================== COPIER LA POSITION ====================
@@ -587,12 +641,14 @@ function placeMarker(lat, lon) {
     }
 
     // ==================== OUVRIR GOOGLE LENS ====================
-    function openGoogleLens(imgId) {
-        var message = _('Pour utiliser Google Lens :\n\n') +
-                     _('1. Faites un clic droit sur l\'image à gauche\n') +
-                     _('2. Sélectionnez "Rechercher une image avec Google Lens"\n\n') +
-                     _('OU\n\n') +
-                     _('Cliquez sur OK pour télécharger l\'image et ouvrir Google Lens');
+function openGoogleLens(imgId) {
+// Construire le message directement sans utiliser les traductions pour Google Lens
+    // Les \n sont problématiques avec json_encode
+    var message = _('Pour utiliser Google Lens :') + '\n\n' +
+                 _('1. Faites un clic droit sur l\'image à gauche') + '\n' +
+                 _('2. Sélectionnez "Rechercher une image avec Google Lens"') + '\n\n' +
+                 _('OU') + '\n\n' +
+                 _('Cliquez sur OK pour télécharger l\'image et ouvrir Google Lens');
         
         if (confirm(message)) {
             // Récupérer l'URL de l'image affichée dans la modale
@@ -634,12 +690,12 @@ function placeMarker(lat, lon) {
       } else if (input.includes(' ')) {
         coords = input.split(' ');
       } else {
-        alert(_('Format invalide. Utilisez: latitude, longitude\nExemple: 45.433214, 12.339914'));
+        alert(_('Format invalide. Utilisez: latitude, longitude. Exemple: 45.433214, 12.339914'));
         return;
       }
       
       if (coords.length !== 2) {
-        alert(_('Format invalide. Utilisez: latitude, longitude\nExemple: 45.433214, 12.339914'));
+        alert(_('Format invalide. Utilisez: latitude, longitude. Exemple: 45.433214, 12.339914'));
         return;
       }
       
@@ -865,6 +921,9 @@ function placeMarker(lat, lon) {
       var html = '<div class="' + className + '">' + message + '</div>';
       
       $('.modal-footer').prepend(html);
+
+        // Durée plus longue pour les warnings (8 secondes au lieu de 3)
+  var duration = type === 'warning' ? 8000 : 3000;
       
       setTimeout(function() {
         $('.status-message').fadeOut(function() {
@@ -873,6 +932,282 @@ function placeMarker(lat, lon) {
       }, 3000);
     }
     
+// ==================== LIEUX PERSONNELS ====================
+    
+    /**-----------------------------------------------------------------------------------
+     * Charger les lieux personnels depuis le serveur
+     */
+    function loadPersonalPlaces() {
+      // Vérifier si la fonctionnalité est activée
+      $.ajax({
+        url: 'ws.php?format=json&method=geotag.checkPlacesEnabled',
+        method: 'GET',
+        success: function(response) {
+          try {
+            var data = typeof response === 'string' ? JSON.parse(response) : response;
+            
+            if (data.stat === 'ok' && data.result) {
+              placesEnabled = data.result.enabled;
+              
+              if (placesEnabled) {
+                // Charger la liste des lieux
+                $.ajax({
+                  url: 'ws.php?format=json&method=geotag.getPlaces',
+                  method: 'GET',
+                  success: function(response) {
+                    try {
+                      var data = typeof response === 'string' ? JSON.parse(response) : response;
+                      
+                      if (data.stat === 'ok' && data.result) {
+                        allPlaces = data.result.places || [];
+                        console.log('Lieux chargés:', allPlaces.length, allPlaces);
+                        $('#geotag-places-block').show();
+                        initPlacesAutocomplete();
+                      }
+                    } catch(e) {
+                      console.error('Erreur parsing places:', e);
+                    }
+                  },
+                  error: function(xhr, status, error) {
+                    console.error('Erreur chargement lieux:', error);
+                  }
+                });
+              }
+            }
+          } catch(e) {
+            console.error('Erreur parsing enabled:', e);
+          }
+        },
+        error: function(xhr, status, error) {
+          console.error('Erreur vérification lieux:', error);
+        }
+      });
+    }
+    
+    /**--------------------------------------------------------------------------------
+     * Initialiser l'autocomplétion des lieux
+     */
+    function initPlacesAutocomplete() {
+      var $input = $('#geotag-place-search');
+      var $dropdown = $('#geotag-places-dropdown');
+
+        // Afficher la liste au focus
+        $input.on('focus', function() {
+        console.log('Focus dans le champ, allPlaces.length:', allPlaces.length);
+          if (allPlaces.length > 0) {
+            showAllPlaces();
+          }
+        });
+
+
+      
+      // Filtrage en temps réel
+      $input.on('input', function() {
+        var search = $(this).val().toLowerCase().trim();
+        
+        if (search.length < 2) {
+          $dropdown.hide().empty();
+          selectedPlace = null;
+          $('#geotag-apply-place').prop('disabled', true);
+          return;
+        }
+        
+        // Filtrer les lieux
+        var filtered = allPlaces.filter(function(place) {
+          return place.name.toLowerCase().indexOf(search) !== -1;
+        });
+        
+        if (filtered.length === 0) {
+          $dropdown.hide().empty();
+          selectedPlace = null;
+          $('#geotag-apply-place').prop('disabled', true);
+          return;
+        }
+        
+        // Afficher les résultats
+        var html = '';
+        filtered.forEach(function(place) {
+          html += '<div class="place-item" data-id="' + place.id + '">';
+          html += '<div class="place-name">' + escapeHtml(place.name) + '</div>';
+          html += '<div class="place-coords">' + place.latitude + ', ' + place.longitude + '</div>';
+          html += '</div>';
+        });
+        
+        $dropdown.html(html).show();
+      });
+      
+$(document).on('click', '#geotag-places-dropdown .place-item', function() {
+  console.log('Clic sur lieu détecté');
+  var placeId = parseInt($(this).data('id'));
+  console.log('Place ID:', placeId);
+  console.log('allPlaces:', allPlaces); // DEBUG - voir la structure
+  selectedPlace = allPlaces.find(function(p) { 
+    console.log('Comparaison:', p.id, '===', placeId, '?', p.id == placeId); // DEBUG
+    return p.id == placeId; // Utiliser == au lieu de === pour éviter les problèmes de type
+  });
+  console.log('Selected place:', selectedPlace);
+        
+        if (selectedPlace) {
+          $input.val(selectedPlace.name);
+          $dropdown.hide();
+          $('#geotag-apply-place').prop('disabled', false);
+        }
+      });
+      
+      // Cacher le dropdown si clic ailleurs
+      $(document).on('click', function(e) {
+        if (!$(e.target).closest('.places-search').length) {
+          $dropdown.hide();
+        }
+      });
+      
+      // Bouton Appliquer
+      $('#geotag-apply-place').on('click', function() {
+        if (selectedPlace) {
+          applyPlaceCoordinates(selectedPlace);
+        }
+      });
+      
+      // Bouton Ajouter
+      $('#geotag-add-place').on('click', function() {
+        if (currentLatitude && currentLongitude) {
+          addCurrentPositionAsPlace();
+        }
+      });
+      
+      // Activer/désactiver le bouton Ajouter selon la présence de GPS
+      updateAddPlaceButton();
+    }
+    
+/**--------------------------------------------------------------------------------
+ * Afficher tous les lieux dans le dropdown
+ */
+function showAllPlaces() {
+  console.log('showAllPlaces appelée, nombre de lieux:', allPlaces.length);
+  var $dropdown = $('#geotag-places-dropdown');
+  
+  if (allPlaces.length === 0) {
+    $dropdown.hide().empty();
+    return;
+  }
+  
+  var html = '';
+  allPlaces.forEach(function(place) {
+    html += '<div class="place-item" data-id="' + place.id + '">';
+    html += '<div class="place-name">' + escapeHtml(place.name) + '</div>';
+    html += '<div class="place-coords">' + place.latitude + ', ' + place.longitude + '</div>';
+    html += '</div>';
+  });
+  
+  $dropdown.html(html).show();
+}
+
+
+
+
+    /**-----------------------------------------------------------------
+     * Appliquer les coordonnées d'un lieu
+     */
+    function applyPlaceCoordinates(place) {
+      currentLatitude = parseFloat(place.latitude);
+      currentLongitude = parseFloat(place.longitude);
+      currentAltitude = null; // Les lieux n'ont pas d'altitude
+      
+      // Mettre à jour l'affichage
+      updateGPSInfo();
+      
+      // Placer le marqueur sur la carte
+      placeMarker(currentLatitude, currentLongitude);
+      
+      // Activer les boutons
+      // Activer les boutons de copie
+$('#geotag-copy-position').prop('disabled', false);
+$('#geotag-copy-coords').prop('disabled', false);
+$('#geotag-reset-position').prop('disabled', false);
+$('#geotag-remove-gps').prop('disabled', false);
+updateAddPlaceButton();
+      
+      // Message de confirmation
+      showStatusMessage(_('Position appliquée depuis') + ' "' + place.name + '"', 'success');
+      
+      // Vider le champ de recherche
+      $('#geotag-place-search').val('');
+      $('#geotag-places-dropdown').hide();
+      selectedPlace = null;
+      $('#geotag-apply-place').prop('disabled', true);
+    }
+    
+    /**
+     * Ajouter la position actuelle comme lieu personnel
+     */
+    function addCurrentPositionAsPlace() {
+      var name = prompt(_('Nom du lieu :'));
+      
+      if (!name || name.trim() === '') {
+        return;
+      }
+      
+      name = name.trim();
+      
+      // Envoyer au serveur
+      $.ajax({
+        url: 'ws.php?format=json',
+        method: 'POST',
+        data: {
+          method: 'geotag.addPlace',
+          name: name,
+          latitude: currentLatitude,
+          longitude: currentLongitude
+        },
+        success: function(response) {
+          try {
+            var data = typeof response === 'string' ? JSON.parse(response) : response;
+            
+            if (data.stat === 'ok' && data.result && data.result.success) {
+              showStatusMessage(_('Lieu') + ' "' + name + '" ' + _('ajouté avec succès'), 'success');
+              // Recharger les lieux
+              loadPersonalPlaces();
+            } else {
+              var error = data.message || _('Erreur inconnue');
+              showStatusMessage(_('Erreur') + ': ' + error, 'error');
+            }
+          } catch(e) {
+            console.error('Erreur parsing response:', e);
+            showStatusMessage(_('Erreur lors de l\'ajout du lieu'), 'error');
+          }
+        },
+        error: function(xhr, status, error) {
+          console.error('Erreur AJAX:', error);
+          showStatusMessage(_('Erreur de communication'), 'error');
+        }
+      });
+    }
+    
+    /**
+     * Mettre à jour l'état du bouton Ajouter
+     */
+    function updateAddPlaceButton() {
+      var hasCoords = currentLatitude !== null && currentLongitude !== null;
+      $('#geotag-add-place').prop('disabled', !hasCoords);
+    }
+    
+    /**
+     * Échapper le HTML pour éviter XSS
+     */
+    function escapeHtml(text) {
+      var map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+      };
+      return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
+    }
+    
+    // ==================== FIN LIEUX PERSONNELS ====================
+
+
     // ==================== FERMER LA MODALE ====================
     function closeModal() {
       console.log('Geo Tag Editor: Fermeture de la modale...');

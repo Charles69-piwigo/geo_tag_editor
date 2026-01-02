@@ -1,5 +1,5 @@
 <?php
-defined('GEOTAGWRITE_PATH') or die('Hacking attempt!');
+defined('GEOTAG_PATH') or die('Hacking attempt!');
 
 // Afficher le tabsheet
 geotageditor_admin_tabsheet('help');

@@ -1,15 +1,15 @@
 <?php
-defined('GEOTAGWRITE_PATH') or die('Hacking attempt!');
+defined('GEOTAG_PATH') or die('Hacking attempt!');
 
 // Charger les traductions
-load_language('plugin.lang', GEOTAGWRITE_PATH);
+//load_language('plugin.lang', GEOTAG_PATH);
 
-include_once(GEOTAGWRITE_PATH . 'lib/rights_manager.php');
+include_once(GEOTAG_PATH . 'lib/rights_manager.php');
 
 // Charger le JS spécifique
 $template->func_combine_script(array(
     'id' => 'admin_rights',
-    'path' => GEOTAGWRITE_PATH . 'js/admin_rights.js',
+    'path' => GEOTAG_PATH . 'js/admin_rights.js',
     'require' => 'jquery'
 ));
 
@@ -122,7 +122,7 @@ $template->assign(array(
     'RIGHTS_MODE' => $config['mode'],
     'GEOTAG_USERS' => $geotag_users,
     'USERS_CONFIG' => json_encode($config['users']),
-    'GEOTAGWRITE_ADMIN_URL' => GEOTAGWRITE_ADMIN . '&tab=manage_rights',
+    'GEOTAG_ADMIN' => GEOTAG_ADMIN . '&tab=manage_rights',
 ));
 
 // Charger le template

@@ -90,4 +90,64 @@ $lang['Mode: Tous les albums'] = 'Mode: All albums';
 $lang['Les configurations utilisateurs sont conservées et seront réappliquées si vous revenez en mode sélectif.'] = 'User configurations are preserved and will be reapplied if you return to selective mode.';
 $lang['Erreur lors de la sauvegarde'] = 'Error saving';
 
+// Personal places
+$lang['Gestion des lieux personnels'] = 'Personal Places Management';
+$lang['Activation'] = 'Activation';
+$lang['Activer la liste des lieux personnels'] = 'Enable personal places list';
+$lang['Permet de créer une liste de lieux fréquemment utilisés pour géolocaliser rapidement vos photos.'] = 'Create a list of frequently used places to quickly geolocate your photos.';
+$lang['Import depuis piwigo_openstreetmap'] = 'Import from piwigo_openstreetmap';
+$lang['Le plugin piwigo_openstreetmap est installé. Vous pouvez importer ses lieux.'] = 'The piwigo_openstreetmap plugin is installed. You can import its places.';
+$lang['En cas de conflit (nom existant) :'] = 'In case of conflict (existing name):';
+$lang['Ignorer (ne pas importer)'] = 'Skip (do not import)';
+$lang['Écraser (remplacer coordonnées)'] = 'Overwrite (replace coordinates)';
+$lang['Créer un doublon (ajouter suffixe)'] = 'Create duplicate (add suffix)';
+$lang['Importer les lieux OSM'] = 'Import OSM places';
+$lang['Liste des lieux'] = 'Places List';
+$lang['Nom du lieu'] = 'Place name';
+$lang['Ajouter'] = 'Add';
+$lang['Chargement...'] = 'Loading...';
+$lang['Aucun lieu enregistré'] = 'No saved places';
+$lang['Carte de localisation'] = 'Location Map';
+$lang['Cliquez sur un lieu de la liste pour le visualiser, ou cliquez sur la carte pour définir les coordonnées.'] = 'Click on a place in the list to view it, or click on the map to set coordinates.';
+$lang['Lieux personnels'] = 'Personal Places';
+
+
+$lang['Lieux personnels'] = 'Personal places';
+$lang['Rechercher un lieu...'] = 'Search a place...';
+$lang['Appliquer'] = 'Apply';
+$lang['Ajouter'] = 'Add';
+$lang['Nom du lieu :'] = 'Place name:';
+$lang['Lieu'] = 'Place';
+$lang['ajouté avec succès'] = 'added successfully';
+$lang['Position appliquée depuis'] = 'Position applied from';
+
+$lang['Coordonnées trouvées en base de données mais pas dans la photo.'] = 'Coordinates found in database but not in photo.';
+$lang['Cliquez sur Enregistrer pour les écrire dans les métadonnées EXIF.'] = 'Click Save to write them in EXIF metadata.';
+
+// Geolocation editor - Messages
+$lang['Saisir/Coller coordonnées'] = 'Enter/Paste coordinates';
+$lang['Copier coordonnées'] = 'Copy coordinates';
+$lang['Google Lens'] = 'Google Lens';
+$lang['Réinitialiser'] = 'Reset';
+$lang['Supprimer GPS'] = 'Remove GPS';
+$lang['Coordonnées copiées !'] = 'Coordinates copied!';
+$lang['Coordonnées appliquées !'] = 'Coordinates applied!';
+$lang['Position réinitialisée !'] = 'Position reset!';
+$lang['Veuillez entrer des coordonnées'] = 'Please enter coordinates';
+$lang['Format invalide. Utilisez: latitude, longitude. Exemple: 45.433214, 12.339914'] = 'Invalid format. Use: latitude, longitude. Example: 45.433214, 12.339914';
+$lang['Coordonnées invalides. Vérifiez les valeurs.'] = 'Invalid coordinates. Check values.';
+$lang['Latitude invalide. Doit être entre -90 et 90.'] = 'Invalid latitude. Must be between -90 and 90.';
+$lang['Longitude invalide. Doit être entre -180 et 180.'] = 'Invalid longitude. Must be between -180 and 180.';
+$lang['Aucune position originale à restaurer'] = 'No original position to restore';
+$lang['Erreur de copie. Coordonnées: '] = 'Copy error. Coordinates: ';
+$lang['Erreur inconnue'] = 'Unknown error';
+$lang['Erreur'] = 'Error';
+$lang['Erreur de communication'] = 'Communication error';
+
+$lang['Pour utiliser Google Lens :'] = 'To use Google Lens:';
+$lang['1. Faites un clic droit sur l\'image à gauche'] = '1. Right-click on the image on the left';
+$lang['2. Sélectionnez "Rechercher une image avec Google Lens"'] = '2. Select "Search image with Google Lens"';
+$lang['OU'] = 'OR';
+$lang['Cliquez sur OK pour télécharger l\'image et ouvrir Google Lens'] = 'Click OK to download the image and open Google Lens';
+
 ?>

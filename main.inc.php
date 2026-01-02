@@ -1,15 +1,31 @@
 <?php
 /*
 Plugin Name: geo_tag_editor
-Version: 1.1d
+Version: 1.3b
 Description: Gestion des coordonnées GPS dans les métadonnées
-Plugin URI: 
+Plugin URI: https://piwigo.org/ext/extension_view.php?eid=1057
 Author: Charles69
 Has Settings: webmaster
 */
 
 //============= VERSIONS ============================================
 /*
+version 1.3b - 09/01/2026
+    ajouté langues de_DE ru_RU
+
+version 1.3a - 08/01/2026
+    ajouté gestion défaut langue UK
+    nettoyage code 
+
+version 1.3 - 06/01/2026
+    corrigé : détection de geo tag pwg_osm seul (pas dans la photo)
+    ajouté la gestion de lieux personnels , import des lieux personnels de pwg_osm
+    ajouté dans l'éditeur l'utilisation des lieux personnels
+    correction traduction
+
+version 1.2 - 29/12/2025
+	  ajouté Plugin URI
+
 version 1.1d - 1ère publication
 version 1.1C - 29/12/2025
     leaflet 1.9.4 isolée pour geo_tag_editor
@@ -52,19 +68,18 @@ if (basename(dirname(__FILE__)) != 'geo_tag_editor')
 }
 
 // Plugin constants
-define('GEOTAG_ID', basename(dirname(__FILE__)));
-define('GEOTAG_PATH', PHPWG_PLUGINS_PATH . GEOTAG_ID . '/');
-define('GEOTAG_ADMIN', get_root_url() . 'admin.php?page=plugin-' . GEOTAG_ID);
-define('GEOTAGWRITE_PATH', PHPWG_PLUGINS_PATH . 'geo_tag_editor/');
-define('GEOTAGWRITE_ADMIN', get_root_url() . 'admin.php?page=plugin-geo_tag_editor');
+define('GEOTAG_ID', basename(dirname(__FILE__)));                                     //  geo_tag_editor
+define('GEOTAG_PATH', PHPWG_PLUGINS_PATH . GEOTAG_ID . '/');                          //  ./plugins/geo_tag_editor 
+define('GEOTAG_ADMIN', get_root_url() . 'admin.php?page=plugin-' . GEOTAG_ID);        //  admin.php?page=plugin-geo_tag_editor
 
 
 // Logs -------------------------------------- à activer pour débugage 
+/*
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 ini_set('error_log', './plugins/geo_tag_editor/geo_tag_debug.log');
-
+*/
 
 // Charger les classes
 require_once(GEOTAG_PATH . 'lib/geotag_imagick_wrapper.php');
@@ -150,6 +165,14 @@ function geo_tag_user_can_edit($image_id)
   
   return false;
 }
+
+//===================== CHARGEMENT DES LANGUES , UK PAR DEFAUT ==================
+// Charger d'abord l'anglais comme base
+load_language('plugin.lang', GEOTAG_PATH, array('language' => 'en_UK', 'no_fallback' => true));
+// Puis charger la langue de l'utilisateur (qui écrasera l'anglais si c'est du français)
+load_language('plugin.lang', GEOTAG_PATH);
+//=================================================================================
+
 
 // ==================== CHARGER JQUERY ====================
 add_event_handler('loc_begin_page_header', 'geo_tag_load_jquery');
@@ -241,7 +264,7 @@ function geo_tag_add_button()
   }
   
   $query = '
-SELECT path
+SELECT path, file
 FROM ' . IMAGES_TABLE . '
 WHERE id = ' . intval($image_id);
   
@@ -263,14 +286,33 @@ WHERE id = ' . intval($image_id);
   $gps_data = $reader->readGPS($image_path);
   
   $has_gps = !empty($gps_data['latitude']) && !empty($gps_data['longitude']);
+  $gps_source = 'exif'; // Source par défaut
+  
+  // Si pas de GPS dans EXIF, chercher dans la BDD (données de piwigo_openstreetmap)
+  if (!$has_gps) {
+    $query_bdd = 'SELECT latitude, longitude FROM '.IMAGES_TABLE.' 
+                  WHERE id = '.$image_id.' 
+                  AND latitude IS NOT NULL 
+                  AND longitude IS NOT NULL';
+    $result_bdd = pwg_query($query_bdd);
+    
+    if ($row_bdd = pwg_db_fetch_assoc($result_bdd)) {
+      $gps_data['latitude'] = $row_bdd['latitude'];
+      $gps_data['longitude'] = $row_bdd['longitude'];
+      $has_gps = true;
+      $gps_source = 'database'; // Indicateur que les données viennent de la BDD
+    }
+  }
   
   $button_data = array(
     'image_id' => $image_id,
     'image_src' => get_root_url() . $row['path'],
+    'image_file' => $row['file'],  
     'has_gps' => $has_gps,
     'latitude' => $has_gps ? $gps_data['latitude'] : null,
     'longitude' => $has_gps ? $gps_data['longitude'] : null,
     'altitude' => isset($gps_data['altitude']) ? $gps_data['altitude'] : null,
+    'gps_source' => $gps_source,
     'save_url' => get_root_url() . 'ws.php?format=json&method=geotag.saveGPS'
   );
   
@@ -345,7 +387,47 @@ function geo_tag_add_ws_methods($arr)
     null,
     array('POST')
   );
+$service->addMethod(
+    'geotag.removeGPS',
+    'geotag_ws_remove_gps',
+    array(
+      'image_id' => array('default' => null),
+    ),
+    'Remove GPS coordinates from image metadata',
+    null,
+    array('POST')
+  );
+  
+  // Lieux personnels
+  $service->addMethod(
+    'geotag.checkPlacesEnabled',
+    'geotag_ws_check_places_enabled',
+    array(),
+    'Check if personal places are enabled'
+  );
+  
+  $service->addMethod(
+    'geotag.getPlaces',
+    'geotag_ws_get_places',
+    array(),
+    'Get all personal places'
+  );
+  
+  $service->addMethod(
+    'geotag.addPlace',
+    'geotag_ws_add_place',
+    array(
+      'name' => array('default' => null),
+      'latitude' => array('default' => null),
+      'longitude' => array('default' => null),
+    ),
+    'Add a new personal place',
+    null,
+    array('POST')
+  );
 }
+
+
 
 // ==================== FONCTION WEB SERVICE: SAUVEGARDER GPS ====================
 function geotag_ws_save_gps($params, &$service)
@@ -498,6 +580,56 @@ WHERE id = ' . intval($params['image_id']);
   }
 }
 
+// ==================== FONCTION WEB SERVICE: VÉRIFIER SI LIEUX ACTIVÉS ====================
+function geotag_ws_check_places_enabled($params, &$service)
+{
+  include_once(GEOTAG_PATH . 'lib/geotag_places_manager.php');
+  $places_manager = new GeoTagEditorPlaces();
+  
+  return array('enabled' => $places_manager->is_enabled());
+}
+
+// ==================== FONCTION WEB SERVICE: RÉCUPÉRER LES LIEUX ====================
+function geotag_ws_get_places($params, &$service)
+{
+  include_once(GEOTAG_PATH . 'lib/geotag_places_manager.php');
+  $places_manager = new GeoTagEditorPlaces();
+  
+  $places = $places_manager->get_all_places();
+  
+  return array(
+    'success' => true,
+    'places' => $places
+  );
+}
+
+// ==================== FONCTION WEB SERVICE: AJOUTER UN LIEU ====================
+function geotag_ws_add_place($params, &$service)
+{
+  if (empty($params['name'])) {
+    return new PwgError(WS_ERR_INVALID_PARAM, 'Missing name');
+  }
+  
+  if (empty($params['latitude']) || empty($params['longitude'])) {
+    return new PwgError(WS_ERR_INVALID_PARAM, 'Missing coordinates');
+  }
+  
+  include_once(GEOTAG_PATH . 'lib/geotag_places_manager.php');
+  $places_manager = new GeoTagEditorPlaces();
+  
+  $name = $params['name'];
+  $latitude = floatval($params['latitude']);
+  $longitude = floatval($params['longitude']);
+  
+  $id = $places_manager->add_place($name, $latitude, $longitude);
+  
+  return array(
+    'success' => true,
+    'id' => $id
+  );
+}
+
+
 // ==================== SYNCHRONISATION DES METADONNEES ====================
 function geo_tag_sync_metadata($image_id)
 {
@@ -532,8 +664,7 @@ function geo_tag_inject_translations()
   if (!isset($page['image_id'])) {
     return;
   }
-  
-  load_language('plugin.lang', GEOTAG_PATH);
+ 
   
   $translations = array(
     'Éditeur de géolocalisation' => l10n('Éditeur de géolocalisation'),
@@ -576,17 +707,26 @@ function geo_tag_inject_translations()
     'Suppression...' => l10n('Suppression...'),
     'Veuillez entrer un lieu à rechercher' => l10n('Veuillez entrer un lieu à rechercher'),
     'Veuillez entrer des coordonnées' => l10n('Veuillez entrer des coordonnées'),
-    'Format invalide. Utilisez: latitude, longitude\nExemple: 45.433214, 12.339914' => l10n('Format invalide. Utilisez: latitude, longitude\nExemple: 45.433214, 12.339914'),
+    'Format invalide. Utilisez: latitude, longitude. Exemple: 45.433214, 12.339914' => l10n('Format invalide. Utilisez: latitude, longitude. Exemple: 45.433214, 12.339914'),
     'Coordonnées invalides. Vérifiez les valeurs.' => l10n('Coordonnées invalides. Vérifiez les valeurs.'),
     'Latitude invalide. Doit être entre -90 et 90.' => l10n('Latitude invalide. Doit être entre -90 et 90.'),
     'Longitude invalide. Doit être entre -180 et 180.' => l10n('Longitude invalide. Doit être entre -180 et 180.'),
     'Aucune position originale à restaurer' => l10n('Aucune position originale à restaurer'),
-    'Pour utiliser Google Lens :\n\n' => l10n('Pour utiliser Google Lens :\n\n'),
-    '1. Faites un clic droit sur l\'image à gauche\n' => l10n('1. Faites un clic droit sur l\'image à gauche\n'),
-    '2. Sélectionnez "Rechercher une image avec Google Lens"\n\n' => l10n('2. Sélectionnez "Rechercher une image avec Google Lens"\n\n'),
-    'OU\n\n' => l10n('OU\n\n'),
-    'Cliquez sur OK pour télécharger l\'image et ouvrir Google Lens' => l10n('Cliquez sur OK pour télécharger l\'image et ouvrir Google Lens'),
-    'Erreur de copie. Coordonnées: ' => l10n('Erreur de copie. Coordonnées: ')
+    'Erreur de copie. Coordonnées: ' => l10n('Erreur de copie. Coordonnées: '),
+    'Lieux personnels' => l10n('Lieux personnels'),
+    'Rechercher un lieu...' => l10n('Rechercher un lieu...'),
+    'Appliquer' => l10n('Appliquer'),
+    'Ajouter' => l10n('Ajouter'),
+    'Nom du lieu :' => l10n('Nom du lieu :'),
+    'Lieu' => l10n('Lieu'),
+    'ajouté avec succès' => l10n('ajouté avec succès'),
+    'Position appliquée depuis' => l10n('Position appliquée depuis'),
+    'Pour utiliser Google Lens :' => l10n('Pour utiliser Google Lens :'),
+    '1. Faites un clic droit sur l\'image à gauche' => l10n('1. Faites un clic droit sur l\'image à gauche'),
+    '2. Sélectionnez "Rechercher une image avec Google Lens"' => l10n('2. Sélectionnez "Rechercher une image avec Google Lens"'),
+    'OU' => l10n('OU'),
+    'Cliquez sur OK pour télécharger l\'image et ouvrir Google Lens' => l10n('Cliquez sur OK pour télécharger l\'image et ouvrir Google Lens')
+
   );
   
   $js = '<script type="text/javascript">window.geotagLang = ' . json_encode($translations, JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) . ';</script>';

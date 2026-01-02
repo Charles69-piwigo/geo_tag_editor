@@ -90,4 +90,64 @@ $lang['Mode: Tous les albums'] = 'Mode: Tous les albums';
 $lang['Les configurations utilisateurs sont conservées et seront réappliquées si vous revenez en mode sélectif.'] = 'Les configurations utilisateurs sont conservées et seront réappliquées si vous revenez en mode sélectif.';
 $lang['Erreur lors de la sauvegarde'] = 'Erreur lors de la sauvegarde';
 
+// Lieux personnels
+$lang['Gestion des lieux personnels'] = 'Gestion des lieux personnels';
+$lang['Activation'] = 'Activation';
+$lang['Activer la liste des lieux personnels'] = 'Activer la liste des lieux personnels';
+$lang['Permet de créer une liste de lieux fréquemment utilisés pour géolocaliser rapidement vos photos.'] = 'Permet de créer une liste de lieux fréquemment utilisés pour géolocaliser rapidement vos photos.';
+$lang['Import depuis piwigo_openstreetmap'] = 'Import depuis piwigo_openstreetmap';
+$lang['Le plugin piwigo_openstreetmap est installé. Vous pouvez importer ses lieux.'] = 'Le plugin piwigo_openstreetmap est installé. Vous pouvez importer ses lieux.';
+$lang['En cas de conflit (nom existant) :'] = 'En cas de conflit (nom existant) :';
+$lang['Ignorer (ne pas importer)'] = 'Ignorer (ne pas importer)';
+$lang['Écraser (remplacer coordonnées)'] = 'Écraser (remplacer coordonnées)';
+$lang['Créer un doublon (ajouter suffixe)'] = 'Créer un doublon (ajouter suffixe)';
+$lang['Importer les lieux OSM'] = 'Importer les lieux OSM';
+$lang['Liste des lieux'] = 'Liste des lieux';
+$lang['Nom du lieu'] = 'Nom du lieu';
+$lang['Ajouter'] = 'Ajouter';
+$lang['Chargement...'] = 'Chargement...';
+$lang['Aucun lieu enregistré'] = 'Aucun lieu enregistré';
+$lang['Carte de localisation'] = 'Carte de localisation';
+$lang['Cliquez sur un lieu de la liste pour le visualiser, ou cliquez sur la carte pour définir les coordonnées.'] = 'Cliquez sur un lieu de la liste pour le visualiser, ou cliquez sur la carte pour définir les coordonnées.';
+$lang['Lieux personnels'] = 'Lieux personnels';
+
+$lang['Lieux personnels'] = 'Lieux personnels';
+$lang['Rechercher un lieu...'] = 'Rechercher un lieu...';
+$lang['Appliquer'] = 'Appliquer';
+$lang['Ajouter'] = 'Ajouter';
+$lang['Nom du lieu :'] = 'Nom du lieu :';
+$lang['Lieu'] = 'Lieu';
+$lang['ajouté avec succès'] = 'ajouté avec succès';
+$lang['Position appliquée depuis'] = 'Position appliquée depuis';
+
+$lang['Coordonnées trouvées en base de données mais pas dans la photo.'] = 'Coordonnées trouvées en base de données mais pas dans la photo.';
+$lang['Cliquez sur Enregistrer pour les écrire dans les métadonnées EXIF.'] = 'Cliquez sur Enregistrer pour les écrire dans les métadonnées EXIF.';
+
+// Éditeur de géolocalisation - Messages
+$lang['Saisir/Coller coordonnées'] = 'Saisir/Coller coordonnées';
+$lang['Copier coordonnées'] = 'Copier coordonnées';
+$lang['Google Lens'] = 'Google Lens';
+$lang['Réinitialiser'] = 'Réinitialiser';
+$lang['Supprimer GPS'] = 'Supprimer GPS';
+$lang['Coordonnées copiées !'] = 'Coordonnées copiées !';
+$lang['Coordonnées appliquées !'] = 'Coordonnées appliquées !';
+$lang['Position réinitialisée !'] = 'Position réinitialisée !';
+$lang['Veuillez entrer des coordonnées'] = 'Veuillez entrer des coordonnées';
+$lang['Format invalide. Utilisez: latitude, longitude. Exemple: 45.433214, 12.339914'] = 'Format invalide. Utilisez: latitude, longitude. Exemple: 45.433214, 12.339914';
+$lang['Coordonnées invalides. Vérifiez les valeurs.'] = 'Coordonnées invalides. Vérifiez les valeurs.';
+$lang['Latitude invalide. Doit être entre -90 et 90.'] = 'Latitude invalide. Doit être entre -90 et 90.';
+$lang['Longitude invalide. Doit être entre -180 et 180.'] = 'Longitude invalide. Doit être entre -180 et 180.';
+$lang['Aucune position originale à restaurer'] = 'Aucune position originale à restaurer';
+$lang['Erreur de copie. Coordonnées: '] = 'Erreur de copie. Coordonnées: ';
+$lang['Erreur inconnue'] = 'Erreur inconnue';
+$lang['Erreur'] = 'Erreur';
+$lang['Erreur de communication'] = 'Erreur de communication';
+
+$lang['Pour utiliser Google Lens :'] = 'Pour utiliser Google Lens :';
+$lang['1. Faites un clic droit sur l\'image à gauche'] = '1. Faites un clic droit sur l\'image à gauche';
+$lang['2. Sélectionnez "Rechercher une image avec Google Lens"'] = '2. Sélectionnez "Rechercher une image avec Google Lens"';
+$lang['OU'] = 'OU';
+$lang['Cliquez sur OK pour télécharger l\'image et ouvrir Google Lens'] = 'Cliquez sur OK pour télécharger l\'image et ouvrir Google Lens';
+
+
 ?>
