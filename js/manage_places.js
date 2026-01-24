@@ -101,7 +101,7 @@
     function initMap() {
         const mapEl = document.getElementById('places-map');
         if (!mapEl) {
-            console.log('Element places-map non trouvé');
+            //console.log('Element places-map non trouvé');
             return;
         }
         
@@ -116,7 +116,7 @@
                 return;
             }
             
-            console.log('Initialisation de la carte avec Leaflet', L.version);
+            //console.log('Initialisation de la carte avec Leaflet', L.version);
             
             // Créer la carte centrée sur la France
             map = L.map('places-map').setView([46.603354, 1.888334], 6);
@@ -132,7 +132,7 @@
                 setMapPosition(e.latlng.lat, e.latlng.lng);
             });
             
-            console.log('Carte initialisée avec succès');
+            //console.log('Carte initialisée avec succès');
         }, 100);
     }
     

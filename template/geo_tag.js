@@ -8,14 +8,7 @@
     
     console.log('Geo Tag Editor: Script chargé');
 
-  // Nettoyer les anciennes clés localStorage (migration)
-  try {
-    if (localStorage.getItem('geotag_last_lat') || localStorage.getItem('geotag_last_lon')) {
-      console.log('Geo Tag Editor: Migration anciennes clés localStorage');
-      localStorage.removeItem('geotag_last_lat');
-      localStorage.removeItem('geotag_last_lon');
-    }
-  } catch(e) {}
+
 //--------------------------------------------------  
 
     
@@ -28,6 +21,7 @@
     var currentLatitude = null;
     var currentLongitude = null;
     var currentAltitude = null;
+    var currentZoom = null;  // cvn
     var hasGPS = false;
     var copiedPosition = null;
     var originalLatitude = null;
@@ -53,11 +47,11 @@
       return;
     }
     
-    console.log('Geo Tag Editor: Leaflet ' + GeoTagLeaflet.version + ' prêt (isolé)');
+    //console.log('Geo Tag Editor: Leaflet ' + GeoTagLeaflet.version + ' prêt (isolé)');
     
     // Vérifier si window.L existe toujours (piwigo_openstreetmap)
     if (typeof window.L !== 'undefined') {
-      console.log('Geo Tag Editor: Leaflet existant détecté (v' + (window.L.version || 'inconnue') + ') - préservé');
+      //console.log('Geo Tag Editor: Leaflet existant détecté (v' + (window.L.version || 'inconnue') + ') - préservé');
     }
     
     try {
@@ -69,57 +63,96 @@
       // Ignore localStorage errors
     }
 
-    // Fonction de traduction
-    function _(text) {
-      return (typeof geotagLang !== 'undefined' && geotagLang[text]) ? geotagLang[text] : text;
+// ================= fonction de Traduction ============================================    
+
+    function _(trad) {
+      return (typeof geotagLang !== 'undefined' && geotagLang[trad]) ? geotagLang[trad] : trad;
     }
 
-    // ==================== GESTIONNAIRE DU BOUTON ====================
-    $(document).on('click', '#geotag-open-editor', function(e) {
-      e.preventDefault();
-      
-      var dataAttr = $(this).data('geotag');
-      if (!dataAttr) {
-        alert('Erreur: Données manquantes');
-        return;
-      }
-      
-      var data;
-      try {
-        data = typeof dataAttr === 'string' ? JSON.parse(dataAttr) : dataAttr;
-      } catch (err) {
-        console.error('Erreur parsing JSON:', err);
-        alert('Erreur: Données invalides');
-        return;
-      }
-      
-      imageId = data.image_id;
-      imageSrc = data.image_src;
-      console.log('Image SRC reçu:', imageSrc);  
-      imageFile = data.image_file || 'Image #' + data.image_id;
-      console.log('Image file:', data.image_file, 'imageFile:', imageFile);
-      saveUrl = data.save_url;
-      hasGPS = data.has_gps;
-      gpsSource = data.gps_source || 'exif';
+// ==================== CHARGEMENT LAZY DES TRADUCTIONS ====================
+let geotagLang = null;
+let translationsPromise = null;
 
- currentLatitude = data.latitude ? parseFloat(data.latitude) : null;
-currentLongitude = data.longitude ? parseFloat(data.longitude) : null;
-currentAltitude = data.altitude ? parseFloat(data.altitude) : null;
-
- originalLatitude = data.latitude ? parseFloat(data.latitude) : null;
-originalLongitude = data.longitude ? parseFloat(data.longitude) : null;
-originalAltitude = data.altitude ? parseFloat(data.altitude) : null;
-      
-      console.log('Ouverture éditeur GPS:', {
-        imageId: imageId,
-        hasGPS: hasGPS,
-        lat: currentLatitude,
-        lon: currentLongitude
+async function loadGeotagTranslations() {
+  if (geotagLang) {
+    return geotagLang; // Déjà chargées
+  }
+  
+  if (!translationsPromise) {
+    translationsPromise = fetch('ws.php?format=json&method=geotag.getTranslations')
+      .then(response => response.json())
+      .then(data => {
+        if (data.stat === 'ok' && data.result) {
+          geotagLang = data.result;
+          return geotagLang;
+        } else {
+          throw new Error('Erreur chargement traductions');
+        }
+      })
+      .catch(error => {
+        console.error('Erreur chargement traductions:', error);
+        // geotagLang reste null, la fonction _() retournera le texte par défaut
+        return null;
       });
-      
-      // Ouvrir directement la modale (Leaflet déjà chargé et isolé)
-      openModal();
-    });
+  }
+  
+  return translationsPromise;
+}
+
+
+    // ==================== GESTIONNAIRE DU BOUTON ====================
+$(document).on('click', '#geotag-open-editor', async function(e) {
+  e.preventDefault();
+  
+  // Désactiver le bouton pendant le chargement
+  var $btn = $(this);
+  var originalText = $btn.text();
+  $btn.prop('disabled', true).text('Chargement...');
+  
+  var dataAttr = $btn.data('geotag');
+  if (!dataAttr) {
+    alert('Erreur: Données manquantes');
+    $btn.prop('disabled', false).text(originalText);
+    return;
+  }
+  
+  var data;
+  try {
+    data = typeof dataAttr === 'string' ? JSON.parse(dataAttr) : dataAttr;
+  } catch (err) {
+    console.error('Erreur parsing JSON:', err);
+    alert('Erreur: Données invalides');
+    $btn.prop('disabled', false).text(originalText);
+    return;
+  }
+  
+  imageId = data.image_id;
+  imageSrc = data.image_src;
+  imageFile = data.image_file || 'Image #' + data.image_id;
+  saveUrl = data.save_url;
+  hasGPS = data.has_gps;
+  gpsSource = data.gps_source || 'exif';
+
+  currentLatitude = data.latitude ? parseFloat(data.latitude) : null;
+  currentLongitude = data.longitude ? parseFloat(data.longitude) : null;
+  currentAltitude = data.altitude ? parseFloat(data.altitude) : null;
+  originalLatitude = data.latitude ? parseFloat(data.latitude) : null;
+  originalLongitude = data.longitude ? parseFloat(data.longitude) : null;
+  originalAltitude = data.altitude ? parseFloat(data.altitude) : null;
+  
+  // ✅ CHARGER LES TRADUCTIONS AVANT D'OUVRIR LA MODALE
+  try {
+    await loadGeotagTranslations();
+    // Restaurer le bouton
+    $btn.prop('disabled', false).text(originalText);
+    // Ouvrir la modale avec les traductions disponibles
+    openModal();
+  } catch (error) {
+    console.error('Erreur lors du chargement:', error);
+    $btn.prop('disabled', false).text(originalText);
+    alert('Erreur lors du chargement de l\'éditeur');
+  }
+});
     
     // ==================== CRÉER LA MODALE ====================
     function openModal() {
@@ -223,7 +256,7 @@ originalAltitude = data.altitude ? parseFloat(data.altitude) : null;
   
   <div class="modal-footer-right">
     <button id="geotag-cancel">${_('Annuler')}</button>
-    <button id="geotag-save-gps">💾 ${_('Enregistrer')}</button>
+    <button id="geotag-save-gps">💾 ${_('Enregistrer ')}</button>
   </div>
 
 </div>
@@ -240,7 +273,7 @@ initMap();
 if (currentLatitude && currentLongitude) {
   setTimeout(function() {
     placeMarker(currentLatitude, currentLongitude);
-  }, 500); // Petit délai pour que la carte soit bien chargée
+  }, 300); // Petit délai pour que la carte soit bien chargée
 }
 
 // Mettre à jour l'affichage des coordonnées
@@ -312,7 +345,7 @@ $('#geotag-copy-coords').click(copyCoordinatesToClipboard);
         }, 500); // Petit délai pour que la modale soit bien affichée
       }    
       
-      console.log('Geo Tag Editor: Modale ouverte');
+      //console.log('Geo Tag Editor: Modale ouverte');
     }
 
 // ==================== INITIALISER LA CARTE OPENSTREETMAP ====================
@@ -323,7 +356,7 @@ function initMap() {
   // Position par défaut Lyon
   var defaultLat = 45.7578;
   var defaultLon = 4.8320;
-  var defaultZoom = 10;
+  var defaultZoom = 13;
   
   var centerLat, centerLon, centerZoom;
   
@@ -331,11 +364,12 @@ function initMap() {
   if (hasGPS && currentLatitude && currentLongitude) {
     centerLat = currentLatitude;
     centerLon = currentLongitude;
-    centerZoom = 13;
+    centerZoom = currentZoom ?? defaultZoom; // cvn
     
-    console.log('Geo Tag Editor: Photo avec GPS existant');
+    //console.log('Geo Tag Editor: Photo avec GPS existant');
   } else {
     // Photo sans GPS : chercher la dernière position utilisée
+    //console.log('Geo Tag Editor: Photo sans coordonnées GPS');
     try {
       var lastPositionStr = localStorage.getItem('geotag_last_position');
       
@@ -347,26 +381,29 @@ function initMap() {
         if (ageInHours < 2) {
           centerLat = lastPosition.lat;
           centerLon = lastPosition.lon;
-          centerZoom = 13;
-          console.log('Geo Tag Editor: Utilisation dernière position (âge: ' + ageInHours.toFixed(1) + 'h)');
+          //centerZoom = 13;
+          centerZoom = lastPosition.zoomMem ?? defaultZoom; // cvn
+          //console.log('Geo Tag Editor: Utilisation dernière position (âge: ' + ageInHours.toFixed(1) + 'h)');
+          console.log('Geo Tag Editor: dernier zoom ' + centerZoom);  // cvn
+          console.log('Geo Tag Editor: zoomMem ' + lastPosition.zoomMem);  // cvn
         } else {
           // Position trop ancienne, supprimer
           localStorage.removeItem('geotag_last_position');
           centerLat = defaultLat;
           centerLon = defaultLon;
           centerZoom = defaultZoom;
-          console.log('Geo Tag Editor: Position expirée (âge: ' + ageInHours.toFixed(1) + 'h), retour au défaut');
+          //console.log('Geo Tag Editor: Position expirée (âge: ' + ageInHours.toFixed(1) + 'h), retour au défaut');
         }
       } else {
         // Aucune position précédente : ville par défaut
         centerLat = defaultLat;
         centerLon = defaultLon;
         centerZoom = defaultZoom;
-        console.log('Geo Tag Editor: Aucune position précédente, utilisation position par défaut');
+        //console.log('Geo Tag Editor: Aucune position précédente, utilisation position par défaut');
       }
     } catch(e) {
       // Erreur localStorage : utiliser valeur par défaut
-      console.error('Geo Tag Editor: Erreur lecture localStorage:', e);
+      //console.error('Geo Tag Editor: Erreur lecture localStorage:', e);
       centerLat = defaultLat;
       centerLon = defaultLon;
       centerZoom = defaultZoom;
@@ -411,38 +448,28 @@ function placeMarker(lat, lon) {
   // Mettre à jour les coordonnées
   currentLatitude = lat;
   currentLongitude = lon;
-  
-  // Sauvegarder comme dernière position utilisée avec timestamp
-  try {
-    var positionData = {
-      lat: lat,
-      lon: lon,
-      timestamp: Date.now()
-    };
-    localStorage.setItem('geotag_last_position', JSON.stringify(positionData));
-    console.log('Geo Tag Editor: Dernière position sauvegardée:', lat, lon);
-  } catch(e) {
-    console.error('Cannot save last position to localStorage:', e);
-  }
+  currentZoom = map.getZoom() ; // cvn
+  //console.log('Current Zoom :', currentZoom);
+
   
   // Événement de déplacement du marqueur
   marker.on('dragend', function(e) {
     var pos = marker.getLatLng();
     currentLatitude = pos.lat;
     currentLongitude = pos.lng;
-    
-    // Sauvegarder aussi lors du déplacement avec timestamp
-    try {
-      var positionData = {
-        lat: pos.lat,
-        lon: pos.lng,
-        timestamp: Date.now()
-      };
-      localStorage.setItem('geotag_last_position', JSON.stringify(positionData));
-    } catch(e) {}
+    //currentZoom = map.getZoom() ; // cvn
+    //console.log('Current Zoom :', currentZoom);
     
     updateGPSInfo();
   });
+
+  // Evénement de zoom
+  map.on('zoomend', function() {
+  currentZoom = map.getZoom();
+  //console.log('currentZoom = ',currentZoom);
+
+});
+
   
   // Mettre à jour l'affichage
   updateGPSInfo();
@@ -465,7 +492,7 @@ function placeMarker(lat, lon) {
         return;
       }
       
-      console.log('Recherche:', query);
+      //console.log('Recherche:', query);
       
       // Afficher un message de chargement
       $('#geotag-search-results').html('<div class="geotag-search-result-item">' + _('Recherche...') + '</div>').addClass('show');
@@ -478,7 +505,7 @@ function placeMarker(lat, lon) {
         type: 'GET',
         dataType: 'json',
         success: function(results) {
-          console.log('Résultats recherche:', results);
+          //console.log('Résultats recherche:', results);
           
           if (results && results.length > 0) {
             displaySearchResults(results);
@@ -586,14 +613,14 @@ function placeMarker(lat, lon) {
         // Afficher un message
         showStatusMessage(_('Position copiée !'), 'success');
         
-        console.log('Position copiée:', copiedPosition);
+        //console.log('Position copiée:', copiedPosition);
       }
     }
     
     // ==================== COLLER LA POSITION ====================
     function pastePosition() {
-      console.log('=== PASTE POSITION ===');
-      console.log('copiedPosition:', copiedPosition);
+      //console.log('=== PASTE POSITION ===');
+      //console.log('copiedPosition:', copiedPosition);
 
       if (copiedPosition) {
         placeMarker(copiedPosition.latitude, copiedPosition.longitude);
@@ -608,7 +635,7 @@ function placeMarker(lat, lon) {
         // Afficher un message
         showStatusMessage(_('Position collée !'), 'success');
         
-        console.log('Position collée:', copiedPosition);
+        //console.log('Position collée:', copiedPosition);
       } else {
         alert(_('Aucune position à coller'));
       }
@@ -629,18 +656,20 @@ function placeMarker(lat, lon) {
         
         // Afficher un message
         showStatusMessage(_('Position réinitialisée !'), 'info');
-        
+        /*
         console.log('Position réinitialisée:', {
           lat: originalLatitude,
           lon: originalLongitude,
           alt: originalAltitude
         });
+        */
       } else {
         alert(_('Aucune position originale à restaurer'));
       }
     }
 
     // ==================== OUVRIR GOOGLE LENS ====================
+
 function openGoogleLens(imgId) {
 // Construire le message directement sans utiliser les traductions pour Google Lens
     // Les \n sont problématiques avec json_encode
@@ -672,9 +701,9 @@ function openGoogleLens(imgId) {
 
     // ==================== APPLIQUER COORDONNÉES DEPUIS LE CHAMP ====================
     function applyCoordinatesFromInput() {
-      console.log('=== APPLY COORDS CLICKED ===');
+      //console.log('=== APPLY COORDS CLICKED ===');
       var input = $('#geotag-coords-input').val().trim();
-      console.log('Input value:', input);
+      //console.log('Input value:', input);
       
       if (!input) {
         alert(_('Veuillez entrer des coordonnées'));
@@ -725,7 +754,7 @@ function openGoogleLens(imgId) {
       // Message de confirmation
       showStatusMessage(_('Coordonnées appliquées !'), 'success');
       
-      console.log('Coordonnées appliquées:', {lat: lat, lon: lon});
+      //console.log('Coordonnées appliquées:', {lat: lat, lon: lon});
     }
     
     // ==================== COPIER COORDONNÉES DANS LE PRESSE-PAPIER ====================
@@ -739,7 +768,7 @@ function openGoogleLens(imgId) {
           // Méthode moderne
           navigator.clipboard.writeText(coords).then(function() {
             showStatusMessage(_('Coordonnées copiées !') + ' (' + coords + ')', 'success');
-            console.log('Coordonnées copiées:', coords);
+            //console.log('Coordonnées copiées:', coords);
           }).catch(function(err) {
             console.error('Erreur copie presse-papier:', err);
             fallbackCopyToClipboard(coords);
@@ -778,18 +807,20 @@ function openGoogleLens(imgId) {
     }
 
     // ==================== SAUVEGARDER LES COORDONNÉES GPS ====================
+
     function saveGPS() {
       if (currentLatitude === null || currentLongitude === null) {
         alert(_('Veuillez placer un marqueur sur la carte'));
         return;
       }
-      
+      /*
       console.log('Sauvegarde GPS:', {
         imageId: imageId,
         latitude: currentLatitude,
         longitude: currentLongitude,
         altitude: currentAltitude
       });
+      */
       
       $('#geotag-save-gps').prop('disabled', true).text(_('Enregistrement...'));
       
@@ -810,7 +841,7 @@ function openGoogleLens(imgId) {
         contentType: false,
         dataType: 'json',
         success: function(data) {
-          console.log('Réponse:', data);
+          //console.log('Réponse:', data);
           
           var result = data.result || data;
           
@@ -828,28 +859,43 @@ function openGoogleLens(imgId) {
               // Sauvegarder dans localStorage
               try {
                 localStorage.setItem('geotag_copied_position', JSON.stringify(copiedPosition));
-                console.log('Position automatiquement copiée après sauvegarde:', copiedPosition);
+                //console.log('Position automatiquement copiée après sauvegarde:', copiedPosition);
               } catch(e) {
                 console.error('Cannot save to localStorage:', e);
               }
+            }
+
+
+            // Sauvegarder comme dernière position utilisée avec timestamp - mémorisation de la dernière position v1.4
+            try {
+              var positionData = {
+                lat: currentLatitude,
+                lon: currentLongitude,
+                zoomMem: currentZoom , // cvn
+                timestamp: Date.now()
+              };
+              localStorage.setItem('geotag_last_position', JSON.stringify(positionData));
+              console.log('Geo Tag Editor: Dernière position sauvegardée:', currentLatitude, currentLongitude, currentZoom);
+            } catch(e) {
+              //console.log('Cannot save last position to localStorage:', e);
             }
             
             setTimeout(function() {
               closeModal();
               // Recharger la page pour voir les changements
               window.location.reload();
-            }, 1500);
+            }, 500);
           } else {
             console.error('Erreur:', data.message || result.message || 'Erreur inconnue');
             showStatusMessage('Erreur: ' + (data.message || result.message || 'Erreur inconnue'), 'error');
-            $('#geotag-save-gps').prop('disabled', false).text(_('Enregistrer'));
+            $('#geotag-save-gps').prop('disabled', false).text(_('Enregistrer '));
           }
         },
         error: function(xhr, status, error) {
           console.error('Erreur AJAX:', error);
           console.error('Response:', xhr.responseText);
           showStatusMessage('Erreur de communication: ' + error, 'error');
-          $('#geotag-save-gps').prop('disabled', false).text(_('Enregistrer'));
+          $('#geotag-save-gps').prop('disabled', false).text(_('Enregistrer '));
         }
       });
     }
@@ -860,7 +906,7 @@ function openGoogleLens(imgId) {
         return;
       }
       
-      console.log('Suppression GPS pour image:', imageId);
+      //console.log('Suppression GPS pour image:', imageId);
       
       $('#geotag-remove-gps').prop('disabled', true).text(_('Suppression...'));
       
@@ -877,7 +923,7 @@ function openGoogleLens(imgId) {
         contentType: false,
         dataType: 'json',
         success: function(data) {
-          console.log('Réponse:', data);
+          //console.log('Réponse:', data);
           
           var result = data.result || data;
           
@@ -900,7 +946,7 @@ function openGoogleLens(imgId) {
             setTimeout(function() {
               closeModal();
               window.location.reload();
-            }, 1500);
+            }, 500);
           } else {
             console.error('Erreur:', data.message || result.message || 'Erreur inconnue');
             showStatusMessage('Erreur: ' + (data.message || result.message || 'Erreur inconnue'), 'error');
@@ -922,8 +968,8 @@ function openGoogleLens(imgId) {
       
       $('.modal-footer').prepend(html);
 
-        // Durée plus longue pour les warnings (8 secondes au lieu de 3)
-  var duration = type === 'warning' ? 8000 : 3000;
+        // Durée plus longue pour les warnings (10 secondes au lieu de 3)
+  var duration = type === 'warning' ? 10000 : 3000;
       
       setTimeout(function() {
         $('.status-message').fadeOut(function() {
@@ -932,7 +978,7 @@ function openGoogleLens(imgId) {
       }, 3000);
     }
     
-// ==================== LIEUX PERSONNELS ====================
+// ==================== LIEUX PERSONNELS ===========================================================
     
     /**-----------------------------------------------------------------------------------
      * Charger les lieux personnels depuis le serveur
@@ -960,7 +1006,7 @@ function openGoogleLens(imgId) {
                       
                       if (data.stat === 'ok' && data.result) {
                         allPlaces = data.result.places || [];
-                        console.log('Lieux chargés:', allPlaces.length, allPlaces);
+                        //console.log('Lieux chargés:', allPlaces.length, allPlaces);
                         $('#geotag-places-block').show();
                         initPlacesAutocomplete();
                       }
@@ -993,7 +1039,7 @@ function openGoogleLens(imgId) {
 
         // Afficher la liste au focus
         $input.on('focus', function() {
-        console.log('Focus dans le champ, allPlaces.length:', allPlaces.length);
+        //console.log('Focus dans le champ, allPlaces.length:', allPlaces.length);
           if (allPlaces.length > 0) {
             showAllPlaces();
           }
@@ -1037,15 +1083,15 @@ function openGoogleLens(imgId) {
       });
       
 $(document).on('click', '#geotag-places-dropdown .place-item', function() {
-  console.log('Clic sur lieu détecté');
+  //console.log('Clic sur lieu détecté');
   var placeId = parseInt($(this).data('id'));
-  console.log('Place ID:', placeId);
-  console.log('allPlaces:', allPlaces); // DEBUG - voir la structure
+  //console.log('Place ID:', placeId);
+  //console.log('allPlaces:', allPlaces); // DEBUG - voir la structure
   selectedPlace = allPlaces.find(function(p) { 
-    console.log('Comparaison:', p.id, '===', placeId, '?', p.id == placeId); // DEBUG
+    //console.log('Comparaison:', p.id, '===', placeId, '?', p.id == placeId); // DEBUG
     return p.id == placeId; // Utiliser == au lieu de === pour éviter les problèmes de type
   });
-  console.log('Selected place:', selectedPlace);
+  //console.log('Selected place:', selectedPlace);
         
         if (selectedPlace) {
           $input.val(selectedPlace.name);
@@ -1083,7 +1129,7 @@ $(document).on('click', '#geotag-places-dropdown .place-item', function() {
  * Afficher tous les lieux dans le dropdown
  */
 function showAllPlaces() {
-  console.log('showAllPlaces appelée, nombre de lieux:', allPlaces.length);
+  //console.log('showAllPlaces appelée, nombre de lieux:', allPlaces.length);
   var $dropdown = $('#geotag-places-dropdown');
   
   if (allPlaces.length === 0) {
@@ -1210,7 +1256,7 @@ updateAddPlaceButton();
 
     // ==================== FERMER LA MODALE ====================
     function closeModal() {
-      console.log('Geo Tag Editor: Fermeture de la modale...');
+      //console.log('Geo Tag Editor: Fermeture de la modale...');
       
       // Détruire complètement la carte AVANT de supprimer les éléments DOM
       if (map) {
@@ -1224,7 +1270,7 @@ updateAddPlaceButton();
       // Retirer les éléments DOM
       $('#geotag-modal, #geotag-modal-overlay').remove();
       
-      console.log('Geo Tag Editor: Modale fermée et carte détruite');
+      //console.log('Geo Tag Editor: Modale fermée et carte détruite');
     }
     
   });

@@ -33,7 +33,7 @@ $lang['Copier la position'] = 'Скопировать позицию';
 $lang['Coller la position'] = 'Вставить позицию';
 $lang['Supprimer les coordonnées GPS'] = 'Удалить GPS координаты';
 $lang['Annuler'] = 'Отменить';
-$lang['Enregistrer'] = 'Сохранить';
+$lang['Enregistrer '] = 'Сохранить';
 $lang['Enregistrement...'] = 'Сохранение...';
 $lang['Suppression...'] = 'Удаление...';
 

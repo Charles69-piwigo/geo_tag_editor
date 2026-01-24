@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: geo_tag_editor
-Version: 1.3b
+Version: 1.4
 Description: Gestion des coordonnées GPS dans les métadonnées
 Plugin URI: https://piwigo.org/ext/extension_view.php?eid=1057
 Author: Charles69
@@ -10,6 +10,15 @@ Has Settings: webmaster
 
 //============= VERSIONS ============================================
 /*
+version 1.4 - 24/01/2026
+    mémorisation du niveau de zoom entre deux tags photos
+    commentaires sur console.log
+    traduction : méthode lazy loading
+    
+version 1.3c - 24/01/2026  - diffusion pour test
+    test mémorisation niveau de zoom
+    commentaires sur console.log
+
 version 1.3b - 09/01/2026
     ajouté langues de_DE ru_RU
 
@@ -230,15 +239,15 @@ function geo_tag_load_scripts()
       if (typeof L !== "undefined" && typeof L.noConflict === "function") {
         var existingL = window.L;
         window.GeoTagLeaflet = L.noConflict();
-        console.log("Geo Tag Editor: Leaflet 1.9.4 isolé");
+        //console.log("Geo Tag Editor: Leaflet 1.9.4 isolé");
         if (existingL) {
-          console.log("Geo Tag Editor: Leaflet existant préservé v" + (existingL.version || "?"));
+          //console.log("Geo Tag Editor: Leaflet existant préservé v" + (existingL.version || "?"));
         }
       } else if (typeof L !== "undefined") {
         window.GeoTagLeaflet = L;
-        console.log("Geo Tag Editor: Leaflet 1.9.4 chargé");
+        //console.log("Geo Tag Editor: Leaflet 1.9.4 chargé");
       } else {
-        console.error("Geo Tag Editor: Échec du chargement de Leaflet");
+        //console.error("Geo Tag Editor: Échec du chargement de Leaflet");
       }
     })();
   </script>
@@ -654,18 +663,25 @@ function geo_tag_resolve_path($relative_path)
   return $resolver->resolve($relative_path);
 }
 
-// ==================== INJECTION DES TRADUCTIONS ====================
-add_event_handler('loc_begin_page_header', 'geo_tag_inject_translations');
+// ==================== TRADUCTIONS - Méthode Lazy loading ====================
+add_event_handler('ws_add_methods', 'geotag_add_ws_methods');
 
-function geo_tag_inject_translations()
+function geotag_add_ws_methods($arr)
 {
-  global $template, $page;
+  $service = &$arr[0];
   
-  if (!isset($page['image_id'])) {
-    return;
-  }
- 
-  
+  $service->addMethod(
+    'geotag.getTranslations',
+    'geotag_ws_get_translations',
+    array(),
+    'Get translations for geotag editor'
+  );
+}
+
+function geotag_ws_get_translations($params, &$service)
+{
+
+
   $translations = array(
     'Éditeur de géolocalisation' => l10n('Éditeur de géolocalisation'),
     'Image' => l10n('Image'),
@@ -729,9 +745,8 @@ function geo_tag_inject_translations()
 
   );
   
-  $js = '<script type="text/javascript">window.geotagLang = ' . json_encode($translations, JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) . ';</script>';
-  
-  $template->append('head_elements', $js);
+ return $translations;
+
 }
 
 ?>

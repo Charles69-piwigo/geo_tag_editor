@@ -45,13 +45,13 @@ $template->append('footer_elements', '
     if (typeof L !== "undefined" && typeof L.noConflict === "function") {
       var existingL = window.L;
       window.GeoTagLeaflet = L.noConflict();
-      console.log("Geo Tag Places: Leaflet 1.9.4 isolé");
+      //console.log("Geo Tag Places: Leaflet 1.9.4 isolé");
       if (existingL) {
-        console.log("Geo Tag Places: Leaflet existant préservé v" + (existingL.version || "?"));
+       // console.log("Geo Tag Places: Leaflet existant préservé v" + (existingL.version || "?"));
       }
     } else if (typeof L !== "undefined") {
       window.GeoTagLeaflet = L;
-      console.log("Geo Tag Places: Leaflet 1.9.4 chargé");
+      //console.log("Geo Tag Places: Leaflet 1.9.4 chargé");
     }
   })();
 </script>
