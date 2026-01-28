@@ -260,6 +260,54 @@
   font-style: italic;
 }
 
+/* ============================================
+   Section Description (IPTC Caption)
+   Positionnée dans la zone image (gauche)
+   ============================================ */
+#geotag-modal .modal-image-area .description-section {
+  width: 100%;
+  margin-top: 15px;
+  padding: 12px 15px;
+  background: #4a4a4a;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+#geotag-modal .modal-image-area .description-section label {
+  display: block;
+  color: #fff;
+  font-size: 13px;
+  margin-bottom: 8px;
+  font-weight: bold;
+}
+
+#geotag-modal .modal-image-area #geotag-description {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #666;
+  border-radius: 4px;
+  background: #2a2a2a;
+  color: #fff;
+  font-size: 13px;
+  font-family: inherit;
+  box-sizing: border-box;
+  resize: vertical;
+  min-height: 70px;
+  max-height: 120px;
+  line-height: 1.4;
+}
+
+#geotag-modal .modal-image-area #geotag-description::placeholder {
+  color: #999;
+  font-style: italic;
+}
+
+#geotag-modal .modal-image-area #geotag-description:focus {
+  outline: none;
+  border-color: #2196F3;
+  box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.25);
+}
+
 /* Boutons d'action dans la sidebar */
 #geotag-modal .sidebar-actions {
   display: flex;

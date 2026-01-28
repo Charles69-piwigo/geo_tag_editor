@@ -147,6 +147,10 @@ $lang['Pour utiliser Google Lens :'] = 'So verwenden Sie Google Lens:';
 $lang['1. Faites un clic droit sur l\'image à gauche'] = '1. Klicken Sie mit der rechten Maustaste auf das Bild links.';
 $lang['2. Sélectionnez "Rechercher une image avec Google Lens"'] = '2. Wählen Sie „Mit Google Lens nach einem Bild suchen“ aus.';
 $lang['OU'] = 'ODER';
-$lang['Cliquez sur OK pour télécharger l\'image et ouvrir Google Lens'] = 'Klicken Sie auf „OK“, um das Bild herunterzuladen und Google Lens zu öffnen.';
+$lang['Cliquez sur OK pour télécharger l\'image et ouvrir Google Lens'] = 'Klicken Sie auf „OK", um das Bild herunterzuladen und Google Lens zu öffnen.';
+
+// ==================== DESCRIPTION (IPTC Caption) ====================
+$lang['Description'] = 'Beschreibung';
+$lang['Description de l\'image...'] = 'Bildbeschreibung...';
 
 ?>

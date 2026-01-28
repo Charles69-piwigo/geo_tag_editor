@@ -149,5 +149,8 @@ $lang['2. Sélectionnez "Rechercher une image avec Google Lens"'] = '2. Sélecti
 $lang['OU'] = 'OU';
 $lang['Cliquez sur OK pour télécharger l\'image et ouvrir Google Lens'] = 'Cliquez sur OK pour télécharger l\'image et ouvrir Google Lens';
 
+// ==================== DESCRIPTION (IPTC Caption) ====================
+$lang['Description'] = 'Description';
+$lang['Description de l\'image...'] = 'Description de l\'image...';
 
 ?>

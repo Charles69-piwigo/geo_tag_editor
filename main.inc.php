@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: geo_tag_editor
-Version: 1.4
+Version: 1.5
 Description: Gestion des coordonnées GPS dans les métadonnées
 Plugin URI: https://piwigo.org/ext/extension_view.php?eid=1057
 Author: Charles69
@@ -10,6 +10,9 @@ Has Settings: webmaster
 
 //============= VERSIONS ============================================
 /*
+version 1.5 - 28/01/2026
+    nouvelle fonctionnalité : champ de description
+
 version 1.4 - 24/01/2026
     mémorisation du niveau de zoom entre deux tags photos
     commentaires sur console.log
@@ -273,18 +276,21 @@ function geo_tag_add_button()
   }
   
   $query = '
-SELECT path, file
+SELECT path, file, comment
 FROM ' . IMAGES_TABLE . '
 WHERE id = ' . intval($image_id);
-  
+
   $result = pwg_query($query);
   $row = pwg_db_fetch_assoc($result);
-  
+
   if (!$row) {
     return;
   }
-  
+
   $image_path = geo_tag_resolve_path($row['path']);
+
+  // Récupérer la description existante
+  $description = isset($row['comment']) ? $row['comment'] : '';
   
   $ext = strtolower(pathinfo($image_path, PATHINFO_EXTENSION));
   if (!in_array($ext, array('jpg', 'jpeg'))) {
@@ -316,12 +322,13 @@ WHERE id = ' . intval($image_id);
   $button_data = array(
     'image_id' => $image_id,
     'image_src' => get_root_url() . $row['path'],
-    'image_file' => $row['file'],  
+    'image_file' => $row['file'],
     'has_gps' => $has_gps,
     'latitude' => $has_gps ? $gps_data['latitude'] : null,
     'longitude' => $has_gps ? $gps_data['longitude'] : null,
     'altitude' => isset($gps_data['altitude']) ? $gps_data['altitude'] : null,
     'gps_source' => $gps_source,
+    'description' => $description,
     'save_url' => get_root_url() . 'ws.php?format=json&method=geotag.saveGPS'
   );
   
@@ -371,8 +378,9 @@ function geo_tag_add_ws_methods($arr)
       'latitude' => array('default' => null),
       'longitude' => array('default' => null),
       'altitude' => array('default' => null),
+      'description' => array('default' => null),
     ),
-    'Save GPS coordinates to image metadata',
+    'Save GPS coordinates and description to image metadata',
     null,
     array('POST')
   );
@@ -444,61 +452,83 @@ function geotag_ws_save_gps($params, &$service)
   if (empty($params['image_id'])) {
     return new PwgError(WS_ERR_INVALID_PARAM, 'Missing image_id');
   }
-  
+
   if (!geo_tag_user_can_edit($params['image_id'])) {
     return new PwgError(403, 'Access denied');
   }
-  
+
   if (empty($params['latitude']) || empty($params['longitude'])) {
     return new PwgError(WS_ERR_INVALID_PARAM, 'Missing GPS coordinates');
   }
-  
+
   $latitude = floatval($params['latitude']);
   $longitude = floatval($params['longitude']);
   $altitude = !empty($params['altitude']) ? floatval($params['altitude']) : null;
-  
+
+  // Récupérer la description (peut être vide ou null)
+  // Note: Piwigo applique addslashes() à tous les $_REQUEST dans common.inc.php
+  // Il faut donc utiliser stripslashes() pour récupérer la valeur originale
+  $description = isset($params['description']) ? stripslashes(trim($params['description'])) : null;
+  if ($description === '') {
+    $description = null;
+  }
+
   if ($latitude < -90 || $latitude > 90) {
     return new PwgError(WS_ERR_INVALID_PARAM, 'Invalid latitude');
   }
-  
+
   if ($longitude < -180 || $longitude > 180) {
     return new PwgError(WS_ERR_INVALID_PARAM, 'Invalid longitude');
   }
-  
+
   $query = '
 SELECT path
 FROM ' . IMAGES_TABLE . '
 WHERE id = ' . intval($params['image_id']);
-  
+
   $result = pwg_query($query);
   $row = pwg_db_fetch_assoc($result);
-  
+
   if (!$row) {
     return new PwgError(404, 'Image not found');
   }
-  
+
   $image_path = geo_tag_resolve_path($row['path']);
-  
+
   if (!file_exists($image_path)) {
     return new PwgError(404, 'Image file not found');
   }
-  
+
   $writer = new GPSMetadataWriter();
-  $result = $writer->writeGPS($image_path, $latitude, $longitude, $altitude);
-  
-  if ($result['success']) {
-    geo_tag_sync_metadata($params['image_id']);
-    
-    return array(
-      'stat' => 'ok',
-      'message' => 'GPS coordinates saved successfully',
-      'latitude' => $latitude,
-      'longitude' => $longitude,
-      'altitude' => $altitude
-    );
-  } else {
-    return new PwgError(500, 'Failed to write GPS: ' . $result['error']);
+
+  // Écrire les coordonnées GPS (EXIF)
+  $gps_result = $writer->writeGPS($image_path, $latitude, $longitude, $altitude);
+
+  if (!$gps_result['success']) {
+    return new PwgError(500, 'Failed to write GPS: ' . $gps_result['error']);
   }
+
+  // Écrire la description IPTC (si fournie ou pour la supprimer)
+  $desc_result = $writer->writeDescription($image_path, $description);
+
+  if (!$desc_result['success']) {
+    // Log l'erreur mais ne pas échouer si GPS a réussi
+    error_log('geo_tag_editor: Warning - Failed to write description: ' . $desc_result['error']);
+  }
+
+  // Synchroniser les métadonnées Piwigo
+  // sync_metadata() lit l'IPTC du fichier et met à jour la BDD automatiquement
+  // (même approche que face_tag_editor)
+  geo_tag_sync_metadata($params['image_id']);
+
+  return array(
+    'stat' => 'ok',
+    'message' => 'GPS coordinates and description saved successfully',
+    'latitude' => $latitude,
+    'longitude' => $longitude,
+    'altitude' => $altitude,
+    'description' => $description
+  );
 }
 
 // ==================== FONCTION WEB SERVICE: RÉCUPÉRER GPS ====================
@@ -704,7 +734,7 @@ function geotag_ws_get_translations($params, &$service)
     'Supprimer GPS' => l10n('Supprimer GPS'),
     'Supprimer les coordonnées GPS' => l10n('Supprimer les coordonnées GPS'),
     'Annuler' => l10n('Annuler'),
-    'Enregistrer' => l10n('Enregistrer'),
+    'Enregistrer ' => l10n('Enregistrer '),
     'Position copiée !' => l10n('Position copiée !'),
     'Aucune position à coller' => l10n('Aucune position à coller'),
     'Position collée !' => l10n('Position collée !'),
@@ -741,7 +771,9 @@ function geotag_ws_get_translations($params, &$service)
     '1. Faites un clic droit sur l\'image à gauche' => l10n('1. Faites un clic droit sur l\'image à gauche'),
     '2. Sélectionnez "Rechercher une image avec Google Lens"' => l10n('2. Sélectionnez "Rechercher une image avec Google Lens"'),
     'OU' => l10n('OU'),
-    'Cliquez sur OK pour télécharger l\'image et ouvrir Google Lens' => l10n('Cliquez sur OK pour télécharger l\'image et ouvrir Google Lens')
+    'Cliquez sur OK pour télécharger l\'image et ouvrir Google Lens' => l10n('Cliquez sur OK pour télécharger l\'image et ouvrir Google Lens'),
+    'Description' => l10n('Description'),
+    'Description de l\'image...' => l10n('Description de l\'image...')
 
   );
   

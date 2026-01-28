@@ -28,6 +28,7 @@
     var originalLongitude = null;
     var originalAltitude = null;
     var gpsSource = 'exif';
+    var currentDescription = '';  // Description de l'image (IPTC Caption-Abstract)
 
     // Variables pour les lieux personnels
     var allPlaces = [];           // Liste complète des lieux
@@ -139,6 +140,7 @@ $(document).on('click', '#geotag-open-editor', async function(e) {
   originalLatitude = data.latitude ? parseFloat(data.latitude) : null;
   originalLongitude = data.longitude ? parseFloat(data.longitude) : null;
   originalAltitude = data.altitude ? parseFloat(data.altitude) : null;
+  currentDescription = data.description || '';  // Charger la description existante
   
   // ✅ CHARGER LES TRADUCTIONS AVANT D'OUVRIR LA MODALE
   try {
@@ -181,6 +183,12 @@ $(document).on('click', '#geotag-open-editor', async function(e) {
       <!-- Zone image (gauche) -->
       <div class="modal-image-area">
         <img src="${imageSrc}" alt="Image" />
+
+        <!-- Description de l'image (sous la photo) -->
+        <div class="description-section">
+          <label for="geotag-description">${_('Description')} :</label>
+          <textarea id="geotag-description" rows="3" placeholder="${_('Description de l\'image...')}"></textarea>
+        </div>
       </div>
       
       <!-- Zone carte (droite) -->
@@ -208,7 +216,7 @@ $(document).on('click', '#geotag-open-editor', async function(e) {
   <div id="geotag-gps-info">
     <div class="gps-no-data">${_('Aucune position GPS')}</div>
   </div>
-  
+
   <!-- Saisir/Coller coordonnées -->
   <div class="coords-input-section">
     <label for="geotag-coords-input">${_('Saisir/Coller coordonnées')} :</label>
@@ -265,7 +273,10 @@ $(document).on('click', '#geotag-open-editor', async function(e) {
 `;
       
 $('body').append(modalHtml);
-      
+
+// Charger la description existante dans le textarea
+$('#geotag-description').val(currentDescription);
+
 // Initialiser la carte
 initMap();
 
@@ -832,6 +843,10 @@ function openGoogleLens(imgId) {
       if (currentAltitude !== null) {
         formData.append('altitude', currentAltitude);
       }
+
+      // Récupérer et envoyer la description
+      var description = $('#geotag-description').val() || '';
+      formData.append('description', description);
       
       $.ajax({
         url: saveUrl,
