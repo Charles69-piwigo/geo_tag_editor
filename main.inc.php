@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: geo_tag_editor
-Version: 1.5
+Version: 1.6
 Description: Gestion des coordonnées GPS dans les métadonnées
 Plugin URI: https://piwigo.org/ext/extension_view.php?eid=1057
 Author: Charles69
@@ -10,6 +10,10 @@ Has Settings: webmaster
 
 //============= VERSIONS ============================================
 /*
+version 1.6 - 13/02/2026
+    corrigé traduction absente dans main.inc
+    corrigé impossible saisir description sans les coordonnées
+    
 version 1.5 - 28/01/2026
     nouvelle fonctionnalité : champ de description
 
@@ -293,7 +297,7 @@ WHERE id = ' . intval($image_id);
   $description = isset($row['comment']) ? $row['comment'] : '';
   
   $ext = strtolower(pathinfo($image_path, PATHINFO_EXTENSION));
-  if (!in_array($ext, array('jpg', 'jpeg'))) {
+  if (!in_array($ext, array('jpg', 'jpeg','png'))) {  // -------------------------------------------- test
     return;
   }
   
@@ -457,12 +461,10 @@ function geotag_ws_save_gps($params, &$service)
     return new PwgError(403, 'Access denied');
   }
 
-  if (empty($params['latitude']) || empty($params['longitude'])) {
-    return new PwgError(WS_ERR_INVALID_PARAM, 'Missing GPS coordinates');
-  }
-
-  $latitude = floatval($params['latitude']);
-  $longitude = floatval($params['longitude']);
+  // Récupérer les coordonnées GPS (peuvent être absentes)
+  $has_gps = !empty($params['latitude']) && !empty($params['longitude']);
+  $latitude = $has_gps ? floatval($params['latitude']) : null;
+  $longitude = $has_gps ? floatval($params['longitude']) : null;
   $altitude = !empty($params['altitude']) ? floatval($params['altitude']) : null;
 
   // Récupérer la description (peut être vide ou null)
@@ -473,12 +475,20 @@ function geotag_ws_save_gps($params, &$service)
     $description = null;
   }
 
-  if ($latitude < -90 || $latitude > 90) {
-    return new PwgError(WS_ERR_INVALID_PARAM, 'Invalid latitude');
+  // Il faut au moins des coordonnées GPS ou une description
+  if (!$has_gps && $description === null) {
+    return new PwgError(WS_ERR_INVALID_PARAM, 'Missing GPS coordinates or description');
   }
 
-  if ($longitude < -180 || $longitude > 180) {
-    return new PwgError(WS_ERR_INVALID_PARAM, 'Invalid longitude');
+  // Valider les coordonnées GPS si présentes
+  if ($has_gps) {
+    if ($latitude < -90 || $latitude > 90) {
+      return new PwgError(WS_ERR_INVALID_PARAM, 'Invalid latitude');
+    }
+
+    if ($longitude < -180 || $longitude > 180) {
+      return new PwgError(WS_ERR_INVALID_PARAM, 'Invalid longitude');
+    }
   }
 
   $query = '
@@ -501,18 +511,19 @@ WHERE id = ' . intval($params['image_id']);
 
   $writer = new GPSMetadataWriter();
 
-  // Écrire les coordonnées GPS (EXIF)
-  $gps_result = $writer->writeGPS($image_path, $latitude, $longitude, $altitude);
+  // Écrire les coordonnées GPS (EXIF) seulement si présentes
+  if ($has_gps) {
+    $gps_result = $writer->writeGPS($image_path, $latitude, $longitude, $altitude);
 
-  if (!$gps_result['success']) {
-    return new PwgError(500, 'Failed to write GPS: ' . $gps_result['error']);
+    if (!$gps_result['success']) {
+      return new PwgError(500, 'Failed to write GPS: ' . $gps_result['error']);
+    }
   }
 
   // Écrire la description IPTC (si fournie ou pour la supprimer)
   $desc_result = $writer->writeDescription($image_path, $description);
 
   if (!$desc_result['success']) {
-    // Log l'erreur mais ne pas échouer si GPS a réussi
     error_log('geo_tag_editor: Warning - Failed to write description: ' . $desc_result['error']);
   }
 
@@ -523,7 +534,7 @@ WHERE id = ' . intval($params['image_id']);
 
   return array(
     'stat' => 'ok',
-    'message' => 'GPS coordinates and description saved successfully',
+    'message' => 'Data saved successfully',
     'latitude' => $latitude,
     'longitude' => $longitude,
     'altitude' => $altitude,
@@ -739,6 +750,7 @@ function geotag_ws_get_translations($params, &$service)
     'Aucune position à coller' => l10n('Aucune position à coller'),
     'Position collée !' => l10n('Position collée !'),
     'Coordonnées GPS enregistrées avec succès !' => l10n('Coordonnées GPS enregistrées avec succès !'),
+    'Données enregistrées avec succès !' => l10n('Données enregistrées avec succès !'),
     'Coordonnées GPS supprimées !' => l10n('Coordonnées GPS supprimées !'),
     'Coordonnées copiées !' => l10n('Coordonnées copiées !'),
     'Coordonnées appliquées !' => l10n('Coordonnées appliquées !'),
@@ -746,6 +758,7 @@ function geotag_ws_get_translations($params, &$service)
     'Voulez-vous vraiment supprimer les coordonnées GPS ?' => l10n('Voulez-vous vraiment supprimer les coordonnées GPS ?'),
     'Geo Taguer' => l10n('Geo Taguer'),
     'Veuillez placer un marqueur sur la carte' => l10n('Veuillez placer un marqueur sur la carte'),
+    'Veuillez placer un marqueur sur la carte ou saisir une description' => l10n('Veuillez placer un marqueur sur la carte ou saisir une description'),
     'Recherche...' => l10n('Recherche...'),
     'Aucun résultat trouvé' => l10n('Aucun résultat trouvé'),
     'm' => l10n('m'),
@@ -773,7 +786,9 @@ function geotag_ws_get_translations($params, &$service)
     'OU' => l10n('OU'),
     'Cliquez sur OK pour télécharger l\'image et ouvrir Google Lens' => l10n('Cliquez sur OK pour télécharger l\'image et ouvrir Google Lens'),
     'Description' => l10n('Description'),
-    'Description de l\'image...' => l10n('Description de l\'image...')
+    'Description de l\'image...' => l10n('Description de l\'image...'),
+    'Cliquez sur Enregistrer pour les écrire dans les métadonnées EXIF.' => l10n('Cliquez sur Enregistrer pour les écrire dans les métadonnées EXIF.'),
+    'Coordonnées trouvées en base de données mais pas dans la photo.' => l10n('Coordonnées trouvées en base de données mais pas dans la photo.')
 
   );
   

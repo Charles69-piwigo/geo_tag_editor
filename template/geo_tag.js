@@ -277,6 +277,11 @@ $('body').append(modalHtml);
 // Charger la description existante dans le textarea
 $('#geotag-description').val(currentDescription);
 
+// Mettre à jour le bouton Enregistrer quand la description change
+$('#geotag-description').on('input', function() {
+  updateSaveButton();
+});
+
 // Initialiser la carte
 initMap();
 
@@ -562,6 +567,13 @@ function placeMarker(lat, lon) {
     }
     
     // ==================== METTRE À JOUR L'AFFICHAGE GPS ====================
+    // Activer/désactiver le bouton Enregistrer selon GPS ou description
+    function updateSaveButton() {
+      var hasGPS = (currentLatitude !== null && currentLongitude !== null);
+      var hasDescription = ($('#geotag-description').val() || '').trim().length > 0;
+      $('#geotag-save-gps').prop('disabled', !hasGPS && !hasDescription);
+    }
+
     function updateGPSInfo() {
       if (currentLatitude !== null && currentLongitude !== null) {
         var html = '<div class="gps-info">';
@@ -580,24 +592,20 @@ function placeMarker(lat, lon) {
           html += '</div>';
         }
         html += '</div>';
-        
+
         $('#geotag-gps-info').html(html);
-        
+
         // Activer le bouton "Copier coordonnées" dans le footer
         $('#geotag-copy-coords').prop('disabled', false);
-        
-        // Activer le bouton de sauvegarde
-        $('#geotag-save-gps').prop('disabled', false);
       } else {
         $('#geotag-gps-info').html('<div class="gps-no-data">' + _('Aucune position GPS') + '</div>');
-        
+
         // Désactiver le bouton "Copier coordonnées"
         $('#geotag-copy-coords').prop('disabled', true);
-        
-        $('#geotag-save-gps').prop('disabled', true);
       }
 
-        // Mettre à jour le bouton Ajouter des lieux
+        // Mettre à jour le bouton de sauvegarde et le bouton Ajouter des lieux
+        updateSaveButton();
         updateAddPlaceButton();
 
     }
@@ -820,32 +828,30 @@ function openGoogleLens(imgId) {
     // ==================== SAUVEGARDER LES COORDONNÉES GPS ====================
 
     function saveGPS() {
-      if (currentLatitude === null || currentLongitude === null) {
-        alert(_('Veuillez placer un marqueur sur la carte'));
+      var description = $('#geotag-description').val() || '';
+      var hasGPS = (currentLatitude !== null && currentLongitude !== null);
+      var hasDescription = (description.trim().length > 0);
+
+      // Il faut au moins des coordonnées GPS ou une description
+      if (!hasGPS && !hasDescription) {
+        alert(_('Veuillez placer un marqueur sur la carte ou saisir une description'));
         return;
       }
-      /*
-      console.log('Sauvegarde GPS:', {
-        imageId: imageId,
-        latitude: currentLatitude,
-        longitude: currentLongitude,
-        altitude: currentAltitude
-      });
-      */
-      
+
       $('#geotag-save-gps').prop('disabled', true).text(_('Enregistrement...'));
-      
+
       // Créer un FormData pour envoyer en POST
       var formData = new FormData();
       formData.append('image_id', imageId);
-      formData.append('latitude', currentLatitude);
-      formData.append('longitude', currentLongitude);
-      if (currentAltitude !== null) {
-        formData.append('altitude', currentAltitude);
+      if (hasGPS) {
+        formData.append('latitude', currentLatitude);
+        formData.append('longitude', currentLongitude);
+        if (currentAltitude !== null) {
+          formData.append('altitude', currentAltitude);
+        }
       }
 
-      // Récupérer et envoyer la description
-      var description = $('#geotag-description').val() || '';
+      // Envoyer la description
       formData.append('description', description);
       
       $.ajax({
@@ -861,20 +867,19 @@ function openGoogleLens(imgId) {
           var result = data.result || data;
           
           if (data.stat === 'ok' || result.stat === 'ok') {
-            showStatusMessage(_('Coordonnées GPS enregistrées avec succès !'), 'success');
+            showStatusMessage(_('Données enregistrées avec succès !'), 'success');
 
-            // Copier automatiquement la position si aucune position n'est déjà copiée
-            if (!copiedPosition) {
+            // Copier automatiquement la position si des coordonnées GPS ont été sauvegardées
+            if (hasGPS && !copiedPosition) {
               copiedPosition = {
                 latitude: currentLatitude,
                 longitude: currentLongitude,
                 altitude: currentAltitude
               };
-              
+
               // Sauvegarder dans localStorage
               try {
                 localStorage.setItem('geotag_copied_position', JSON.stringify(copiedPosition));
-                //console.log('Position automatiquement copiée après sauvegarde:', copiedPosition);
               } catch(e) {
                 console.error('Cannot save to localStorage:', e);
               }
@@ -882,17 +887,19 @@ function openGoogleLens(imgId) {
 
 
             // Sauvegarder comme dernière position utilisée avec timestamp - mémorisation de la dernière position v1.4
-            try {
-              var positionData = {
-                lat: currentLatitude,
-                lon: currentLongitude,
-                zoomMem: currentZoom , // cvn
-                timestamp: Date.now()
-              };
-              localStorage.setItem('geotag_last_position', JSON.stringify(positionData));
-              console.log('Geo Tag Editor: Dernière position sauvegardée:', currentLatitude, currentLongitude, currentZoom);
-            } catch(e) {
-              //console.log('Cannot save last position to localStorage:', e);
+            if (hasGPS) {
+              try {
+                var positionData = {
+                  lat: currentLatitude,
+                  lon: currentLongitude,
+                  zoomMem: currentZoom , // cvn
+                  timestamp: Date.now()
+                };
+                localStorage.setItem('geotag_last_position', JSON.stringify(positionData));
+                console.log('Geo Tag Editor: Dernière position sauvegardée:', currentLatitude, currentLongitude, currentZoom);
+              } catch(e) {
+                //console.log('Cannot save last position to localStorage:', e);
+              }
             }
             
             setTimeout(function() {

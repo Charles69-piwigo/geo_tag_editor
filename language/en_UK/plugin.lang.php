@@ -150,6 +150,10 @@ $lang['2. Sélectionnez "Rechercher une image avec Google Lens"'] = '2. Select "
 $lang['OU'] = 'OR';
 $lang['Cliquez sur OK pour télécharger l\'image et ouvrir Google Lens'] = 'Click OK to download the image and open Google Lens';
 
+// ==================== MESSAGES (decoupled GPS/Description save) ====================
+$lang['Veuillez placer un marqueur sur la carte ou saisir une description'] = 'Please place a marker on the map or enter a description';
+$lang['Données enregistrées avec succès !'] = 'Data saved successfully!';
+
 // ==================== DESCRIPTION (IPTC Caption) ====================
 $lang['Description'] = 'Description';
 $lang['Description de l\'image...'] = 'Image description...';
