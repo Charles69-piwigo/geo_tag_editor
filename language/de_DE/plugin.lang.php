@@ -121,7 +121,8 @@ $lang['ajouté avec succès'] = 'erfolgreich hinzugefügt';
 $lang['Position appliquée depuis'] = 'Position seit';
 
 $lang['Coordonnées trouvées en base de données mais pas dans la photo.'] = 'Kontaktdaten in der Datenbank gefunden, aber nicht auf dem Foto.';
-$lang['Cliquez sur Enregistrer pour les écrire dans les métadonnées EXIF.'] = 'Klicken Sie auf „Speichern“, um sie in die EXIF-Metadaten zu schreiben.';
+$lang['Cliquez sur Enregistrer pour les écrire dans les métadonnées EXIF.'] = 'Klicken Sie auf „Speichern", um sie in die EXIF-Metadaten zu schreiben.';
+$lang['Format non-JPEG : les coordonnées seront enregistrées uniquement en base de données.'] = 'Nicht-JPEG-Format: Koordinaten werden nur in der Datenbank gespeichert.';
 
 // Éditeur de géolocalisation - Messages
 $lang['Saisir/Coller coordonnées'] = 'Koordinaten eingeben/einfügen';

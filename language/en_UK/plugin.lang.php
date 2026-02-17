@@ -123,6 +123,7 @@ $lang['Position appliquée depuis'] = 'Position applied from';
 
 $lang['Coordonnées trouvées en base de données mais pas dans la photo.'] = 'Coordinates found in database but not in photo.';
 $lang['Cliquez sur Enregistrer pour les écrire dans les métadonnées EXIF.'] = 'Click Save to write them in EXIF metadata.';
+$lang['Format non-JPEG : les coordonnées seront enregistrées uniquement en base de données.'] = 'Non-JPEG format: coordinates will be saved in database only.';
 
 // Geolocation editor - Messages
 $lang['Saisir/Coller coordonnées'] = 'Enter/Paste coordinates';

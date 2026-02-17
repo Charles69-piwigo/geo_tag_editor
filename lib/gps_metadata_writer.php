@@ -4,11 +4,8 @@ defined('PHPWG_ROOT_PATH') or die('Hacking attempt!');
 /**
  * GPS Metadata Writer avec PEL (PHP Exif Library)
  * Écrit les coordonnées GPS sans dépendre d'exiftool
- * + Support IPTC Caption-Abstract (Description) via Imagick
+ * + Support IPTC Caption-Abstract (Description) en PHP pur (sans Imagick)
  */
-
-// Charger le wrapper Imagick pour l'écriture IPTC
-require_once(GEOTAG_PATH . 'lib/geotag_imagick_wrapper.php');
 
 // Charger TOUS les fichiers PEL
 $pel_files = array(
@@ -196,98 +193,97 @@ class GPSMetadataWriter
     }
   }
   
-/**
- * Supprime les coordonnées GPS
- */
-public function removeGPS($image_path)
-{
-  try {
-    // Créer une sauvegarde
-    $backup_path = $image_path . '.gps_backup';
-    if (!@copy($image_path, $backup_path)) {
-      return array('success' => false, 'error' => 'Cannot create backup');
-    }
-    
-    // Charger le JPEG avec PEL
-    $jpeg = new PelJpeg($image_path);
-    
-    // Récupérer la section EXIF
-    $exif = $jpeg->getExif();
-    if ($exif == null) {
-      // Pas d'EXIF, donc pas de GPS à supprimer
-      @unlink($backup_path);
-      return array('success' => true);
-    }
-    
-    // Récupérer la structure TIFF
-    $tiff = $exif->getTiff();
-    if ($tiff == null) {
-      @unlink($backup_path);
-      return array('success' => true);
-    }
-    
-    // Récupérer l'IFD principal
-    $ifd0 = $tiff->getIfd();
-    if ($ifd0 == null) {
-      @unlink($backup_path);
-      return array('success' => true);
-    }
-    
-    // Créer un nouvel IFD0 SANS l'IFD GPS
-    $new_ifd0 = new PelIfd(PelIfd::IFD0);
-    
-    // Copier toutes les entrées de l'IFD0 original
-    $entries = $ifd0->getEntries();
-    foreach ($entries as $entry) {
-      $new_ifd0->addEntry($entry);
-    }
-    
-    // Copier tous les sub-IFDs SAUF le GPS
-    $sub_ifds = array(
-      PelIfd::EXIF,
-      PelIfd::INTEROPERABILITY
-      // On ne copie PAS PelIfd::GPS
-    );
-    
-    foreach ($sub_ifds as $sub_type) {
-      $sub_ifd = $ifd0->getSubIfd($sub_type);
-      if ($sub_ifd != null) {
-        $new_ifd0->addSubIfd($sub_ifd);
+  /**
+   * Supprime les coordonnées GPS
+   */
+  public function removeGPS($image_path)
+  {
+    try {
+      // Créer une sauvegarde
+      $backup_path = $image_path . '.gps_backup';
+      if (!@copy($image_path, $backup_path)) {
+        return array('success' => false, 'error' => 'Cannot create backup');
       }
-    }
-    
-    // Si il y a un IFD1 (thumbnail), le copier aussi
-    $ifd1 = $ifd0->getNextIfd();
-    if ($ifd1 != null) {
-      $new_ifd0->setNextIfd($ifd1);
-    }
-    
-    // Remplacer l'ancien IFD0 par le nouveau (sans GPS)
-    $tiff->setIfd($new_ifd0);
-    
-    // Sauvegarder le fichier
-    $jpeg->saveFile($image_path);
-    
-    // Supprimer le backup
-    @unlink($backup_path);
-    clearstatcache(true, $image_path);
-    
-    return array('success' => true);
-    
-  } catch (Exception $e) {
-    // Restaurer le backup en cas d'erreur
-    if (isset($backup_path) && file_exists($backup_path)) {
-      @copy($backup_path, $image_path);
+      
+      // Charger le JPEG avec PEL
+      $jpeg = new PelJpeg($image_path);
+      
+      // Récupérer la section EXIF
+      $exif = $jpeg->getExif();
+      if ($exif == null) {
+        @unlink($backup_path);
+        return array('success' => true);
+      }
+      
+      // Récupérer la structure TIFF
+      $tiff = $exif->getTiff();
+      if ($tiff == null) {
+        @unlink($backup_path);
+        return array('success' => true);
+      }
+      
+      // Récupérer l'IFD principal
+      $ifd0 = $tiff->getIfd();
+      if ($ifd0 == null) {
+        @unlink($backup_path);
+        return array('success' => true);
+      }
+      
+      // Créer un nouvel IFD0 SANS l'IFD GPS
+      $new_ifd0 = new PelIfd(PelIfd::IFD0);
+      
+      // Copier toutes les entrées de l'IFD0 original
+      $entries = $ifd0->getEntries();
+      foreach ($entries as $entry) {
+        $new_ifd0->addEntry($entry);
+      }
+      
+      // Copier tous les sub-IFDs SAUF le GPS
+      $sub_ifds = array(
+        PelIfd::EXIF,
+        PelIfd::INTEROPERABILITY
+        // On ne copie PAS PelIfd::GPS
+      );
+      
+      foreach ($sub_ifds as $sub_type) {
+        $sub_ifd = $ifd0->getSubIfd($sub_type);
+        if ($sub_ifd != null) {
+          $new_ifd0->addSubIfd($sub_ifd);
+        }
+      }
+      
+      // Si il y a un IFD1 (thumbnail), le copier aussi
+      $ifd1 = $ifd0->getNextIfd();
+      if ($ifd1 != null) {
+        $new_ifd0->setNextIfd($ifd1);
+      }
+      
+      // Remplacer l'ancien IFD0 par le nouveau (sans GPS)
+      $tiff->setIfd($new_ifd0);
+      
+      // Sauvegarder le fichier
+      $jpeg->saveFile($image_path);
+      
+      // Supprimer le backup
       @unlink($backup_path);
+      clearstatcache(true, $image_path);
+      
+      return array('success' => true);
+      
+    } catch (Exception $e) {
+      // Restaurer le backup en cas d'erreur
+      if (isset($backup_path) && file_exists($backup_path)) {
+        @copy($backup_path, $image_path);
+        @unlink($backup_path);
+      }
+      
+      return array(
+        'success' => false,
+        'error' => 'PEL error: ' . $e->getMessage()
+      );
     }
-    
-    return array(
-      'success' => false,
-      'error' => 'PEL error: ' . $e->getMessage()
-    );
   }
-}
-  
+
   //========================================================================
   /**
    * Convertit degrés décimaux en DMS (Degrees, Minutes, Seconds)
@@ -304,84 +300,254 @@ public function removeGPS($image_path)
 
   //========================================================================
   // SECTION IPTC - Gestion de la description (Caption-Abstract)
+  // Version PHP pur - sans dépendance Imagick ou ImageMagick CLI
   //========================================================================
 
   /**
    * Écrit la description IPTC (Caption-Abstract, tag 2#120) dans l'image
-   * Utilise le wrapper Imagick pour compatibilité PHP Imagick / ImageMagick CLI
+   * Manipulation directe du segment APP13 du JPEG en PHP pur
    *
    * @param string $image_path Chemin vers l'image
    * @param string|null $description Description à écrire (null ou vide pour supprimer)
    * @return array ['success' => bool, 'error' => string|null]
    */
-  public function writeDescription($image_path, $description = null)
-  {
-    try {
-      // Charger l'image avec le wrapper Imagick
-      $imagick = GeoTagImagickWrapper::load($image_path);
+public function writeDescription($image_path, $description = null)
+{
+    $backup_path = $image_path . '.iptc_backup';
+    if (!@copy($image_path, $backup_path)) {
+      return array('success' => false, 'error' => 'Cannot create backup');
+    }
 
-      if ($imagick->hasError()) {
-        return array('success' => false, 'error' => $imagick->getError());
+    try {
+      $jpeg_data = file_get_contents($image_path);
+      error_log('GTE 1 - jpeg_data length: ' . strlen($jpeg_data));
+
+      if ($jpeg_data === false) {
+        @unlink($backup_path);
+        return array('success' => false, 'error' => 'Cannot read image file');
       }
 
-      // Écrire la description IPTC
-      $this->writeIptcDescription($imagick, $description);
+      if (substr($jpeg_data, 0, 2) !== "\xFF\xD8") {
+        @unlink($backup_path);
+        return array('success' => false, 'error' => 'Not a valid JPEG file');
+      }
 
-      // Sauvegarder l'image (pour PHP Imagick)
-      $imagick->writeImage($image_path);
+      $existing_iptc = $this->extractIptcFromJpeg($jpeg_data);
+      error_log('GTE 2 - existing_iptc: ' . ($existing_iptc === false ? 'false' : strlen($existing_iptc) . ' bytes'));
 
-      // Nettoyer
-      $imagick->clear();
-      $imagick->destroy();
+      $iptc_data = ($existing_iptc !== false && strlen($existing_iptc) > 0)
+                  ? $this->parseIptcProfile($existing_iptc)
+                  : array();
+      error_log('GTE 3 - iptc_data keys: ' . implode(', ', array_keys($iptc_data)));
 
+      if ($description !== null && strlen(trim($description)) > 0) {
+        $iptc_data['2#120'] = trim($description);
+      } else {
+        unset($iptc_data['2#120']);
+      }
+      error_log('GTE 4 - iptc_data after update, 2#120: ' . (isset($iptc_data['2#120']) ? $iptc_data['2#120'] : 'NOT SET'));
+
+      $new_iptc = $this->buildIptcProfile($iptc_data);
+      error_log('GTE 5 - new_iptc length: ' . strlen($new_iptc));
+
+      $new_jpeg = $this->injectIptcIntoJpeg($jpeg_data, $new_iptc);
+      error_log('GTE 6 - new_jpeg: ' . ($new_jpeg === false ? 'false' : strlen($new_jpeg) . ' bytes'));
+
+      if ($new_jpeg === false) {
+        @unlink($backup_path);
+        return array('success' => false, 'error' => 'Failed to inject IPTC profile into JPEG');
+      }
+
+      $written = file_put_contents($image_path, $new_jpeg);
+      error_log('GTE 7 - file_put_contents: ' . var_export($written, true));
+
+      if ($written === false) {
+        @copy($backup_path, $image_path);
+        @unlink($backup_path);
+        return array('success' => false, 'error' => 'Cannot write image file');
+      }
+
+      @unlink($backup_path);
       clearstatcache(true, $image_path);
-
+      error_log('GTE 8 - final filesize: ' . filesize($image_path));
       return array('success' => true);
 
     } catch (Exception $e) {
+      error_log('GTE EXCEPTION: ' . $e->getMessage());
+      if (file_exists($backup_path)) {
+        @copy($backup_path, $image_path);
+        @unlink($backup_path);
+      }
       return array('success' => false, 'error' => 'IPTC error: ' . $e->getMessage());
     }
+}
+
+  /**
+   * Extrait le profil IPTC brut depuis le segment APP13 d'un JPEG
+   * Le segment APP13 contient un en-tête "Photoshop 3.0\0" suivi de blocs 8BIM
+   * Le bloc 8BIM de type 0x0404 contient les données IPTC
+   *
+   * @param string $jpeg_data Contenu binaire du JPEG
+   * @return string|false Données IPTC brutes, ou false si absent
+   */
+  private function extractIptcFromJpeg($jpeg_data)
+  {
+    $pos = 2; // Passer le marqueur SOI (FF D8)
+    $len = strlen($jpeg_data);
+
+    while ($pos + 4 <= $len) {
+      if (ord($jpeg_data[$pos]) !== 0xFF) {
+        break;
+      }
+
+      $marker = ord($jpeg_data[$pos + 1]);
+
+      // SOS = fin des segments d'en-tête
+      if ($marker === 0xDA) break;
+
+      // Segments sans longueur
+      if ($marker === 0xD8 || $marker === 0xD9) {
+        $pos += 2;
+        continue;
+      }
+
+      if ($pos + 4 > $len) break;
+      $seg_len = (ord($jpeg_data[$pos + 2]) << 8) | ord($jpeg_data[$pos + 3]);
+
+      // APP13 = marqueur 0xED
+      if ($marker === 0xED) {
+        $seg_data = substr($jpeg_data, $pos + 4, $seg_len - 2);
+
+        $photoshop_header = "Photoshop 3.0\x00";
+        if (strncmp($seg_data, $photoshop_header, strlen($photoshop_header)) === 0) {
+          // Parcourir les blocs 8BIM
+          $bim_pos = strlen($photoshop_header);
+          $seg_data_len = strlen($seg_data);
+
+          while ($bim_pos + 12 <= $seg_data_len) {
+            if (substr($seg_data, $bim_pos, 4) !== '8BIM') break;
+
+            $resource_type = (ord($seg_data[$bim_pos + 4]) << 8) | ord($seg_data[$bim_pos + 5]);
+
+            $name_len = ord($seg_data[$bim_pos + 6]);
+            $name_padded = ($name_len % 2 === 0) ? $name_len + 2 : $name_len + 1;
+
+            $data_offset = $bim_pos + 6 + $name_padded;
+            if ($data_offset + 4 > $seg_data_len) break;
+
+            $data_len = (ord($seg_data[$data_offset]) << 24)
+                      | (ord($seg_data[$data_offset + 1]) << 16)
+                      | (ord($seg_data[$data_offset + 2]) << 8)
+                      |  ord($seg_data[$data_offset + 3]);
+
+            $data_start = $data_offset + 4;
+            if ($data_start + $data_len > $seg_data_len) break;
+
+            // 0x0404 = IPTC-NAA Resource
+            if ($resource_type === 0x0404) {
+              return substr($seg_data, $data_start, $data_len);
+            }
+
+            $data_padded = ($data_len % 2 !== 0) ? $data_len + 1 : $data_len;
+            $bim_pos = $data_start + $data_padded;
+          }
+        }
+      }
+
+      $pos += 2 + $seg_len;
+    }
+
+    return false;
   }
 
   /**
-   * Écrit la description dans le profil IPTC
-   * Préserve les autres champs IPTC existants (keywords, etc.)
+   * Injecte un profil IPTC dans un JPEG
+   * Supprime l'APP13 existant et insère le nouveau juste après SOI
    *
-   * @param GeoTagImagickWrapper $imagick Instance du wrapper
-   * @param string|null $description Description à écrire
+   * @param string $jpeg_data Contenu binaire du JPEG original
+   * @param string $iptc_data Données IPTC brutes à injecter
+   * @return string|false Nouveau contenu JPEG, ou false en cas d'erreur
    */
-  private function writeIptcDescription($imagick, $description = null)
+  private function injectIptcIntoJpeg($jpeg_data, $iptc_data)
   {
-    // Récupérer profil IPTC existant pour préserver les autres champs
-    try {
-      $iptc_profile = $imagick->getImageProfile('iptc');
-    } catch (Exception $e) {
-      $iptc_profile = false;
+    // Construire le bloc 8BIM contenant les données IPTC (type 0x0404)
+    $bim_block  = '8BIM';
+    $bim_block .= "\x04\x04";                      // Type 0x0404 = IPTC
+    $bim_block .= "\x00\x00";                      // Nom Pascal vide
+    $bim_block .= pack('N', strlen($iptc_data));   // Taille sur 4 octets
+    $bim_block .= $iptc_data;
+    if (strlen($iptc_data) % 2 !== 0) {
+      $bim_block .= "\x00";                        // Alignement sur 2 octets
     }
 
-    if ($iptc_profile) {
-      $iptc_data = $this->parseIptcProfile($iptc_profile);
-    } else {
-      $iptc_data = array();
-    }
+    // Construire le segment APP13 complet
+    $photoshop_header = "Photoshop 3.0\x00";
+    $app13_content  = $photoshop_header . $bim_block;
+    $app13_seg_len  = strlen($app13_content) + 2;  // +2 pour les octets de longueur
 
-    // Gérer la description (ajouter, modifier ou supprimer)
-    if ($description !== null && strlen(trim($description)) > 0) {
-      // Tag IPTC 2#120 = Caption-Abstract (Description)
-      $iptc_data['2#120'] = trim($description);
-    } else {
-      // Supprimer la description si elle existe
-      if (isset($iptc_data['2#120'])) {
-        unset($iptc_data['2#120']);
-      }
-    }
+    $app13_segment = "\xFF\xED" . pack('n', $app13_seg_len) . $app13_content;
 
-    // Reconstruire le profil IPTC complet
-    $new_profile = $this->buildIptcProfile($iptc_data);
+    // Supprimer les segments APP13 existants
+    $jpeg_without_app13 = $this->removeApp13Segments($jpeg_data);
 
-    // Écrire le profil
-    $imagick->setImageProfile('iptc', $new_profile);
+    // Insérer le nouveau APP13 juste après le SOI (FF D8)
+    $new_jpeg = substr($jpeg_without_app13, 0, 2)  // SOI
+              . $app13_segment
+              . substr($jpeg_without_app13, 2);    // reste du JPEG
+
+    return $new_jpeg;
   }
+
+  /**
+   * Supprime tous les segments APP13 (0xFFED) d'un JPEG
+   *
+   * @param string $jpeg_data Contenu binaire du JPEG
+   * @return string JPEG sans segments APP13
+   */
+  private function removeApp13Segments($jpeg_data)
+  {
+    $result = substr($jpeg_data, 0, 2); // Conserver le SOI (FF D8)
+    $pos = 2;
+    $len = strlen($jpeg_data);
+
+    while ($pos + 4 <= $len) {
+      if (ord($jpeg_data[$pos]) !== 0xFF) {
+        $result .= substr($jpeg_data, $pos);
+        break;
+      }
+
+      $marker = ord($jpeg_data[$pos + 1]);
+
+      // SOS = copier tout le reste tel quel
+      if ($marker === 0xDA) {
+        $result .= substr($jpeg_data, $pos);
+        break;
+      }
+
+      // Segments sans longueur
+      if ($marker === 0xD8 || $marker === 0xD9) {
+        $result .= substr($jpeg_data, $pos, 2);
+        $pos += 2;
+        continue;
+      }
+
+      $seg_len = (ord($jpeg_data[$pos + 2]) << 8) | ord($jpeg_data[$pos + 3]);
+
+      if ($marker === 0xED) {
+        // APP13 : ignorer
+      } else {
+        $result .= substr($jpeg_data, $pos, 2 + $seg_len);
+      }
+
+      $pos += 2 + $seg_len;
+    }
+
+    return $result;
+  }
+
+  //========================================================================
+  // SECTION IPTC - Parse / Build (inchangé)
+  //========================================================================
 
   /**
    * Parse un profil IPTC binaire en tableau associatif
@@ -397,26 +563,21 @@ public function removeGPS($image_path)
     $len = strlen($binary);
 
     while ($pos < $len) {
-      // Chercher le marqueur IPTC (0x1C)
       if (ord($binary[$pos]) != 0x1C) {
         $pos++;
         continue;
       }
 
-      // Vérifier qu'il reste assez de données
       if ($pos + 4 >= $len) break;
 
-      // Lire record, tag et taille
       $record = ord($binary[$pos + 1]);
-      $tag = ord($binary[$pos + 2]);
-      $size = (ord($binary[$pos + 3]) << 8) | ord($binary[$pos + 4]);
+      $tag    = ord($binary[$pos + 2]);
+      $size   = (ord($binary[$pos + 3]) << 8) | ord($binary[$pos + 4]);
 
-      // Vérifier la taille
       if ($pos + 5 + $size > $len) break;
 
-      // Extraire la valeur
       $value = substr($binary, $pos + 5, $size);
-      $key = sprintf('%d#%03d', $record, $tag);
+      $key   = sprintf('%d#%03d', $record, $tag);
 
       // Keywords (2#025) peuvent être multiples
       if ($key == '2#025') {
@@ -453,7 +614,7 @@ public function removeGPS($image_path)
 
     // Envelope Record (1#090) - Marqueur UTF-8
     if (!isset($data['1#090'])) {
-      $data['1#090'] = "\x1B%G"; // Escape sequence UTF-8
+      $data['1#090'] = "\x1B%G";
     }
     $val = $data['1#090'];
     $binary .= chr(0x1C) . chr(1) . chr(90) . pack('n', strlen($val)) . $val;
@@ -467,26 +628,23 @@ public function removeGPS($image_path)
 
     // Autres tags (description, keywords, etc.)
     foreach ($data as $key => $value) {
-      // Ignorer les tags déjà écrits
       if ($key === '1#000' || $key === '1#090' || $key === '2#000') {
         continue;
       }
 
-      // Parser la clé (format: record#tag)
       list($record, $tag) = explode('#', $key);
       $record = intval($record);
-      $tag = intval($tag);
+      $tag    = intval($tag);
 
-      // Gérer les valeurs multiples (comme keywords)
       $values = is_array($value) ? $value : array($value);
 
       foreach ($values as $val) {
-        $size = strlen($val);
-        $binary .= chr(0x1C);       // Marqueur IPTC
-        $binary .= chr($record);    // Numéro de record
-        $binary .= chr($tag);       // Numéro de tag
-        $binary .= pack('n', $size); // Taille (big-endian)
-        $binary .= $val;            // Valeur
+        $size    = strlen($val);
+        $binary .= chr(0x1C);
+        $binary .= chr($record);
+        $binary .= chr($tag);
+        $binary .= pack('n', $size);
+        $binary .= $val;
       }
     }
 

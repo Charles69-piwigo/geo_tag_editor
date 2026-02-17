@@ -122,6 +122,7 @@ $lang['Position appliquée depuis'] = 'Position appliquée depuis';
 
 $lang['Coordonnées trouvées en base de données mais pas dans la photo.'] = 'Coordonnées trouvées en base de données mais pas dans la photo.';
 $lang['Cliquez sur Enregistrer pour les écrire dans les métadonnées EXIF.'] = 'Cliquez sur Enregistrer pour les écrire dans les métadonnées EXIF.';
+$lang['Format non-JPEG : les coordonnées seront enregistrées uniquement en base de données.'] = 'Format non-JPEG : les coordonnées seront enregistrées uniquement en base de données.';
 
 // Éditeur de géolocalisation - Messages
 $lang['Saisir/Coller coordonnées'] = 'Saisir/Coller coordonnées';

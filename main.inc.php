@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: geo_tag_editor
-Version: 1.6
+Version: 1.8
 Description: Gestion des coordonnées GPS dans les métadonnées
 Plugin URI: https://piwigo.org/ext/extension_view.php?eid=1057
 Author: Charles69
@@ -10,6 +10,18 @@ Has Settings: webmaster
 
 //============= VERSIONS ============================================
 /*
+version 1.8 - 23/06/2026
+    conformation au standard get_original_url
+
+version 1.7a - 24/02/2026 (non diffusée)
+    tests pour débugage
+    version ne nécessitant pas Imagick
+    
+version 1.7 - 17/02/2026
+    corrigé régression png
+    si pwg_openstreetmap actif, enregistrement en base de données
+    corrigé impossibilité supprimer description existante
+
 version 1.6 - 13/02/2026
     corrigé traduction absente dans main.inc
     corrigé impossible saisir description sans les coordonnées
@@ -90,12 +102,12 @@ define('GEOTAG_ADMIN', get_root_url() . 'admin.php?page=plugin-' . GEOTAG_ID);  
 
 
 // Logs -------------------------------------- à activer pour débugage 
-/*
-error_reporting(E_ALL);
-ini_set('display_errors', 0);
-ini_set('log_errors', 1);
-ini_set('error_log', './plugins/geo_tag_editor/geo_tag_debug.log');
-*/
+
+//error_reporting(E_ALL);
+//ini_set('display_errors', 0);
+//ini_set('log_errors', 1);
+//ini_set('error_log', './plugins/geo_tag_editor/geo_tag_debug.log');
+
 
 // Charger les classes
 require_once(GEOTAG_PATH . 'lib/geotag_imagick_wrapper.php');
@@ -297,12 +309,22 @@ WHERE id = ' . intval($image_id);
   $description = isset($row['comment']) ? $row['comment'] : '';
   
   $ext = strtolower(pathinfo($image_path, PATHINFO_EXTENSION));
-  if (!in_array($ext, array('jpg', 'jpeg','png'))) {  // -------------------------------------------- test
+  $is_jpeg = in_array($ext, array('jpg', 'jpeg'));
+
+  if (!in_array($ext, array('jpg', 'jpeg', 'png', 'gif'))) {
     return;
   }
-  
+
+  // Pour les non-JPEG : géotagage BDD uniquement, nécessite piwigo_openstreetmap
+  if (!$is_jpeg) {
+    $osm_plugins = get_db_plugins('active', 'piwigo-openstreetmap');
+    if (empty($osm_plugins)) {
+      return; // Pas de géotagage possible pour les non-JPEG sans OSM
+    }
+  }
+
   $reader = new GPSMetadataReader();
-  $gps_data = $reader->readGPS($image_path);
+  $gps_data = $is_jpeg ? $reader->readGPS($image_path) : array();
   
   $has_gps = !empty($gps_data['latitude']) && !empty($gps_data['longitude']);
   $gps_source = 'exif'; // Source par défaut
@@ -323,15 +345,25 @@ WHERE id = ' . intval($image_id);
     }
   }
   
+  // Compatibilité pdp : laisser le plugin de protection réécrire l'URL si actif
+  include_once(PHPWG_ROOT_PATH . 'include/derivative.inc.php');
+  $src_image = new SrcImage(array(
+    'id'   => $image_id,
+    'path' => $row['path'],
+    'file' => $row['file'],
+  ));
+  $image_src_url = trigger_change('get_original_url', get_root_url() . $row['path'], $src_image);
+
   $button_data = array(
     'image_id' => $image_id,
-    'image_src' => get_root_url() . $row['path'],
+    'image_src' => $image_src_url,
     'image_file' => $row['file'],
     'has_gps' => $has_gps,
     'latitude' => $has_gps ? $gps_data['latitude'] : null,
     'longitude' => $has_gps ? $gps_data['longitude'] : null,
     'altitude' => isset($gps_data['altitude']) ? $gps_data['altitude'] : null,
     'gps_source' => $gps_source,
+    'is_jpeg' => $is_jpeg,
     'description' => $description,
     'save_url' => get_root_url() . 'ws.php?format=json&method=geotag.saveGPS'
   );
@@ -475,8 +507,9 @@ function geotag_ws_save_gps($params, &$service)
     $description = null;
   }
 
-  // Il faut au moins des coordonnées GPS ou une description
-  if (!$has_gps && $description === null) {
+  // Il faut au moins des coordonnées GPS, une description, ou un effacement explicite de description
+  $description_sent = isset($params['description']);
+  if (!$has_gps && $description === null && !$description_sent) {
     return new PwgError(WS_ERR_INVALID_PARAM, 'Missing GPS coordinates or description');
   }
 
@@ -509,6 +542,40 @@ WHERE id = ' . intval($params['image_id']);
     return new PwgError(404, 'Image file not found');
   }
 
+  $ext = strtolower(pathinfo($image_path, PATHINFO_EXTENSION));
+  $is_jpeg = in_array($ext, array('jpg', 'jpeg'));
+
+  // ---- Non-JPEG : écriture en BDD uniquement (pas d'EXIF) ----
+  if (!$is_jpeg) {
+    $updates = array();
+    if ($has_gps) {
+      $updates[] = 'latitude = ' . $latitude;
+      $updates[] = 'longitude = ' . $longitude;
+    }
+    if ($description !== null) {
+      $updates[] = "comment = '" . pwg_db_real_escape_string($description) . "'";
+    } elseif (isset($params['description'])) {
+      $updates[] = 'comment = NULL';
+    }
+    if (!empty($updates)) {
+      $query = 'UPDATE ' . IMAGES_TABLE . ' SET ' . implode(', ', $updates)
+             . ' WHERE id = ' . intval($params['image_id']);
+      pwg_query($query);
+    }
+    if (function_exists('invalidate_user_cache')) {
+      invalidate_user_cache();
+    }
+    return array(
+      'stat' => 'ok',
+      'message' => 'Data saved in database only (non-JPEG)',
+      'latitude' => $latitude,
+      'longitude' => $longitude,
+      'altitude' => $altitude,
+      'description' => $description
+    );
+  }
+
+  // ---- JPEG : écriture EXIF + IPTC + sync BDD (comportement existant) ----
   $writer = new GPSMetadataWriter();
 
   // Écrire les coordonnées GPS (EXIF) seulement si présentes
@@ -521,7 +588,16 @@ WHERE id = ' . intval($params['image_id']);
   }
 
   // Écrire la description IPTC (si fournie ou pour la supprimer)
+
+  // Écrire la description IPTC (si fournie ou pour la supprimer)
+error_log('GTE MAIN - image_path: ' . $image_path);
+error_log('GTE MAIN - description reçue: ' . var_export($description, true));
+error_log('GTE MAIN - file_exists: ' . var_export(file_exists($image_path), true));
+error_log('GTE MAIN - is_writable: ' . var_export(is_writable($image_path), true));
+
   $desc_result = $writer->writeDescription($image_path, $description);
+
+error_log('GTE MAIN - writeDescription result: ' . var_export($desc_result, true));  
 
   if (!$desc_result['success']) {
     error_log('geo_tag_editor: Warning - Failed to write description: ' . $desc_result['error']);
@@ -531,6 +607,13 @@ WHERE id = ' . intval($params['image_id']);
   // sync_metadata() lit l'IPTC du fichier et met à jour la BDD automatiquement
   // (même approche que face_tag_editor)
   geo_tag_sync_metadata($params['image_id']);
+
+  // sync_metadata ne met pas à NULL les champs absents de l'IPTC
+  // Il faut donc forcer la mise à jour en BDD quand la description est effacée
+  if ($description === null && $description_sent) {
+    $query = 'UPDATE ' . IMAGES_TABLE . " SET comment = NULL WHERE id = " . intval($params['image_id']);
+    pwg_query($query);
+  }
 
   return array(
     'stat' => 'ok',
@@ -603,31 +686,38 @@ WHERE id = ' . intval($params['image_id']);
   }
   
   $image_path = geo_tag_resolve_path($row['path']);
-  
+
   if (!file_exists($image_path)) {
     return new PwgError(404, 'Image file not found');
   }
-  
-  $writer = new GPSMetadataWriter();
-  $result = $writer->removeGPS($image_path);
-  
-  if ($result['success']) {
-    $query = '
+
+  $ext = strtolower(pathinfo($image_path, PATHINFO_EXTENSION));
+  $is_jpeg = in_array($ext, array('jpg', 'jpeg'));
+
+  // Pour les JPEG : supprimer les données EXIF GPS
+  if ($is_jpeg) {
+    $writer = new GPSMetadataWriter();
+    $result = $writer->removeGPS($image_path);
+
+    if (!$result['success']) {
+      return new PwgError(500, 'Failed to remove GPS: ' . $result['error']);
+    }
+  }
+
+  // Mettre à jour la base de données (pour tous les formats)
+  $query = '
 UPDATE ' . IMAGES_TABLE . '
 SET latitude = NULL, longitude = NULL
 WHERE id = ' . intval($params['image_id']);
-    
-    pwg_query($query);
-    
-    geo_tag_sync_metadata($params['image_id']);
-    
-    return array(
-      'stat' => 'ok',
-      'message' => 'GPS coordinates removed successfully'
-    );
-  } else {
-    return new PwgError(500, 'Failed to remove GPS: ' . $result['error']);
-  }
+
+  pwg_query($query);
+
+  geo_tag_sync_metadata($params['image_id']);
+
+  return array(
+    'stat' => 'ok',
+    'message' => 'GPS coordinates removed successfully'
+  );
 }
 
 // ==================== FONCTION WEB SERVICE: VÉRIFIER SI LIEUX ACTIVÉS ====================

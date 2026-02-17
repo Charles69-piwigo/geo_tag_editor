@@ -28,7 +28,9 @@
     var originalLongitude = null;
     var originalAltitude = null;
     var gpsSource = 'exif';
+    var isJpeg = true;            // Format JPEG (EXIF supporté) ou non
     var currentDescription = '';  // Description de l'image (IPTC Caption-Abstract)
+    var initialDescription = '';  // Description initiale pour détecter l'effacement
 
     // Variables pour les lieux personnels
     var allPlaces = [];           // Liste complète des lieux
@@ -133,6 +135,7 @@ $(document).on('click', '#geotag-open-editor', async function(e) {
   saveUrl = data.save_url;
   hasGPS = data.has_gps;
   gpsSource = data.gps_source || 'exif';
+  isJpeg = data.is_jpeg !== undefined ? data.is_jpeg : true;
 
   currentLatitude = data.latitude ? parseFloat(data.latitude) : null;
   currentLongitude = data.longitude ? parseFloat(data.longitude) : null;
@@ -141,6 +144,7 @@ $(document).on('click', '#geotag-open-editor', async function(e) {
   originalLongitude = data.longitude ? parseFloat(data.longitude) : null;
   originalAltitude = data.altitude ? parseFloat(data.altitude) : null;
   currentDescription = data.description || '';  // Charger la description existante
+  initialDescription = currentDescription;  // Mémoriser pour détecter l'effacement
   
   // ✅ CHARGER LES TRADUCTIONS AVANT D'OUVRIR LA MODALE
   try {
@@ -350,15 +354,24 @@ $('#geotag-copy-coords').click(copyCoordinatesToClipboard);
 // Charger les lieux personnels
       loadPersonalPlaces();
 
-        // Si les coordonnées viennent de la BDD, afficher un avertissement
-      if (gpsSource === 'database') {
+        // Avertissements selon le format et la source des coordonnées
+      if (!isJpeg) {
+        // Format non-JPEG : pas d'écriture EXIF possible
+        setTimeout(function() {
+          showStatusMessage(
+            '⚠️ ' + _('Format non-JPEG : les coordonnées seront enregistrées uniquement en base de données.'),
+            'warning'
+          );
+        }, 1500);
+      } else if (gpsSource === 'database') {
+        // JPEG avec coordonnées en BDD mais pas dans EXIF
         setTimeout(function() {
           showStatusMessage(
             '⚠️ ' + _('Coordonnées trouvées en base de données mais pas dans la photo.') + ' ' +
             _('Cliquez sur Enregistrer pour les écrire dans les métadonnées EXIF.'),
             'warning'
           );
-        }, 500); // Petit délai pour que la modale soit bien affichée
+        }, 1500);
       }    
       
       //console.log('Geo Tag Editor: Modale ouverte');
@@ -571,7 +584,9 @@ function placeMarker(lat, lon) {
     function updateSaveButton() {
       var hasGPS = (currentLatitude !== null && currentLongitude !== null);
       var hasDescription = ($('#geotag-description').val() || '').trim().length > 0;
-      $('#geotag-save-gps').prop('disabled', !hasGPS && !hasDescription);
+      // Permettre l'enregistrement si la description a été effacée (non-vide → vide)
+      var descriptionCleared = (initialDescription.trim().length > 0 && !hasDescription);
+      $('#geotag-save-gps').prop('disabled', !hasGPS && !hasDescription && !descriptionCleared);
     }
 
     function updateGPSInfo() {
@@ -832,8 +847,9 @@ function openGoogleLens(imgId) {
       var hasGPS = (currentLatitude !== null && currentLongitude !== null);
       var hasDescription = (description.trim().length > 0);
 
-      // Il faut au moins des coordonnées GPS ou une description
-      if (!hasGPS && !hasDescription) {
+      // Il faut au moins des coordonnées GPS, une description, ou un effacement de description
+      var descriptionCleared = (initialDescription.trim().length > 0 && !hasDescription);
+      if (!hasGPS && !hasDescription && !descriptionCleared) {
         alert(_('Veuillez placer un marqueur sur la carte ou saisir une description'));
         return;
       }
@@ -906,7 +922,7 @@ function openGoogleLens(imgId) {
               closeModal();
               // Recharger la page pour voir les changements
               window.location.reload();
-            }, 500);
+            }, 200);
           } else {
             console.error('Erreur:', data.message || result.message || 'Erreur inconnue');
             showStatusMessage('Erreur: ' + (data.message || result.message || 'Erreur inconnue'), 'error');
