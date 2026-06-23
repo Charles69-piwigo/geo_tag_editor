@@ -278,6 +278,14 @@ $(document).on('click', '#geotag-open-editor', async function(e) {
       
 $('body').append(modalHtml);
 
+// Afficher un message d'erreur si l'image originale est inaccessible (ex: 403)
+$('.modal-image-area img').on('error', function() {
+  $(this).replaceWith(
+    '<div style="padding:16px;color:#c00;background:#fee;border:1px solid #f99;border-radius:4px;font-size:13px;text-align:center;">' +
+    '⚠️ Image inaccessible<br><small>' + imageSrc + '</small></div>'
+  );
+});
+
 // Charger la description existante dans le textarea
 $('#geotag-description').val(currentDescription);
 
@@ -705,33 +713,12 @@ function placeMarker(lat, lon) {
     // ==================== OUVRIR GOOGLE LENS ====================
 
 function openGoogleLens(imgId) {
-// Construire le message directement sans utiliser les traductions pour Google Lens
-    // Les \n sont problématiques avec json_encode
-    var message = _('Pour utiliser Google Lens :') + '\n\n' +
-                 _('1. Faites un clic droit sur l\'image à gauche') + '\n' +
-                 _('2. Sélectionnez "Rechercher une image avec Google Lens"') + '\n\n' +
-                 _('OU') + '\n\n' +
-                 _('Cliquez sur OK pour télécharger l\'image et ouvrir Google Lens');
-        
-        if (confirm(message)) {
-            // Récupérer l'URL de l'image affichée dans la modale
-            var imgSrc = $('.modal-image-area img').attr('src');
-            
-            // Créer un lien de téléchargement
-            var a = document.createElement('a');
-            a.href = imgSrc;
-            a.download = 'image_google_lens_' + imgId + '.jpg';
-            a.target = '_blank';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            
-            // Ouvrir Google Lens après un court délai
-            setTimeout(function() {
-                window.open('https://lens.google.com/', '_blank');
-            }, 500);
-        }
-    }
+    showStatusMessage(
+        '🔍 ' + _('Clic droit sur l\'image → "Rechercher une image avec Google Lens"'),
+        'info',
+        6000
+    );
+}
 
     // ==================== APPLIQUER COORDONNÉES DEPUIS LE CHAMP ====================
     function applyCoordinatesFromInput() {
@@ -1000,20 +987,21 @@ function openGoogleLens(imgId) {
     }
     
     // ==================== AFFICHER UN MESSAGE DE STATUT ====================
-    function showStatusMessage(message, type) {
+    function showStatusMessage(message, type, duration) {
       var className = 'status-message status-' + type;
       var html = '<div class="' + className + '">' + message + '</div>';
       
-      $('.modal-footer').prepend(html);
+      $('.modal-footer').before(html);
 
-        // Durée plus longue pour les warnings (10 secondes au lieu de 3)
-  var duration = type === 'warning' ? 10000 : 3000;
+      if (!duration) {
+        duration = type === 'warning' ? 10000 : 3000;
+      }
       
       setTimeout(function() {
         $('.status-message').fadeOut(function() {
           $(this).remove();
         });
-      }, 3000);
+      }, duration);
     }
     
 // ==================== LIEUX PERSONNELS ===========================================================

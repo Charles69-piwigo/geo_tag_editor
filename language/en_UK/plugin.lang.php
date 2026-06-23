@@ -145,11 +145,7 @@ $lang['Erreur inconnue'] = 'Unknown error';
 $lang['Erreur'] = 'Error';
 $lang['Erreur de communication'] = 'Communication error';
 
-$lang['Pour utiliser Google Lens :'] = 'To use Google Lens:';
-$lang['1. Faites un clic droit sur l\'image à gauche'] = '1. Right-click on the image on the left';
-$lang['2. Sélectionnez "Rechercher une image avec Google Lens"'] = '2. Select "Search image with Google Lens"';
-$lang['OU'] = 'OR';
-$lang['Cliquez sur OK pour télécharger l\'image et ouvrir Google Lens'] = 'Click OK to download the image and open Google Lens';
+$lang['Clic droit sur l\'image → "Rechercher une image avec Google Lens"'] = 'Right-click on the image → "Search image with Google Lens"';
 
 // ==================== MESSAGES (decoupled GPS/Description save) ====================
 $lang['Veuillez placer un marqueur sur la carte ou saisir une description'] = 'Please place a marker on the map or enter a description';
