@@ -720,6 +720,33 @@ function openGoogleLens(imgId) {
     );
 }
 
+    // ==================== PARSER COORDONNÉES (décimal ou DMS) ====================
+    // Gère : "45.4332", "-112.1234", "37° 38′ 20″ N", "112° 10′ 12″ O/W", etc.
+    function parseCoordValue(str) {
+      str = str.trim();
+      // Détecter format DMS (contient ° ou ′ ou ″ ou d/m/s)
+      if (/[°′″'"dms]/i.test(str)) {
+        // Extraire la direction (N, S, E, W, O)
+        var dirMatch = str.match(/[NSEWOnsewо]/i);
+        var direction = dirMatch ? dirMatch[0].toUpperCase() : null;
+        // O = Ouest = West
+        if (direction === 'O') direction = 'W';
+
+        // Extraire tous les nombres (entiers ou décimaux)
+        var nums = str.match(/[\d]+(?:[.,]\d+)?/g);
+        if (!nums) return NaN;
+        var deg = parseFloat(nums[0].replace(',', '.')) || 0;
+        var min = parseFloat((nums[1] || '0').replace(',', '.')) || 0;
+        var sec = parseFloat((nums[2] || '0').replace(',', '.')) || 0;
+
+        var decimal = deg + min / 60 + sec / 3600;
+        if (direction === 'S' || direction === 'W') decimal = -decimal;
+        return decimal;
+      }
+      // Format décimal standard
+      return parseFloat(str.replace(',', '.'));
+    }
+
     // ==================== APPLIQUER COORDONNÉES DEPUIS LE CHAMP ====================
     function applyCoordinatesFromInput() {
       //console.log('=== APPLY COORDS CLICKED ===');
@@ -749,8 +776,8 @@ function openGoogleLens(imgId) {
         return;
       }
       
-      var lat = parseFloat(coords[0].trim());
-      var lon = parseFloat(coords[1].trim());
+      var lat = parseCoordValue(coords[0].trim());
+      var lon = parseCoordValue(coords[1].trim());
       
       // Valider les coordonnées
       if (isNaN(lat) || isNaN(lon)) {

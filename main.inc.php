@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: geo_tag_editor
-Version: 1.8a
+Version: 1.8b
 Description: Gestion des coordonnées GPS dans les métadonnées
 Plugin URI: https://piwigo.org/ext/extension_view.php?eid=1057
 Author: Charles69
@@ -10,6 +10,10 @@ Has Settings: webmaster
 
 //============= VERSIONS ============================================
 /*
+
+version 1.8b - 27/06/2026
+    bug sur coordonnées au format 37° 38′ 20″ N, 112° 10′ 12″ O
+
 version 1.8a - 23/06/2026
     bug affichage photo dans la fenêtre popup
 
