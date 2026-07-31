@@ -594,33 +594,40 @@ WHERE id = ' . intval($params['image_id']);
     }
   }
 
-  // Écrire la description IPTC (si fournie ou pour la supprimer)
-
-  // Écrire la description IPTC (si fournie ou pour la supprimer)
-error_log('GTE MAIN - image_path: ' . $image_path);
-error_log('GTE MAIN - description reçue: ' . var_export($description, true));
-error_log('GTE MAIN - file_exists: ' . var_export(file_exists($image_path), true));
-error_log('GTE MAIN - is_writable: ' . var_export(is_writable($image_path), true));
-
-  $desc_result = $writer->writeDescription($image_path, $description);
-
-error_log('GTE MAIN - writeDescription result: ' . var_export($desc_result, true));  
-
-  if (!$desc_result['success']) {
-    error_log('geo_tag_editor: Warning - Failed to write description: ' . $desc_result['error']);
+  // Valeur de comment à réaffirmer en BDD après sync_metadata() :
+  // - description envoyée dans la requête -> c'est la nouvelle valeur (peut être null pour effacer)
+  // - description non envoyée -> on garde la valeur actuelle en BDD, quelle qu'elle soit
+  //   (sync_metadata() ne doit jamais écraser comment avec l'IPTC du fichier, voir plus bas)
+  if ($description_sent) {
+    $comment_to_keep = $description;
+  } else {
+    $query = 'SELECT comment FROM ' . IMAGES_TABLE . ' WHERE id = ' . intval($params['image_id']);
+    $result = pwg_query($query);
+    $row_comment = pwg_db_fetch_assoc($result);
+    $comment_to_keep = $row_comment['comment'];
   }
 
-  // Synchroniser les métadonnées Piwigo
-  // sync_metadata() lit l'IPTC du fichier et met à jour la BDD automatiquement
-  // (même approche que face_tag_editor)
+  // Écrire la description IPTC (Caption-Abstract 2#120) seulement si une description a été
+  // explicitement envoyée dans cette requête. Sinon on ne touche pas au tag IPTC existant.
+  if ($description_sent) {
+    $iptc_description = ($description !== null) ? geo_tag_html_to_plain_text($description) : null;
+    $desc_result = $writer->writeDescription($image_path, $iptc_description);
+
+    if (!$desc_result['success']) {
+      error_log('geo_tag_editor: Warning - Failed to write description: ' . $desc_result['error']);
+    }
+  }
+
+  // Synchroniser les métadonnées Piwigo (GPS lat/long, dimensions, etc. depuis EXIF/IPTC)
   geo_tag_sync_metadata($params['image_id']);
 
-  // sync_metadata ne met pas à NULL les champs absents de l'IPTC
-  // Il faut donc forcer la mise à jour en BDD quand la description est effacée
-  if ($description === null && $description_sent) {
-    $query = 'UPDATE ' . IMAGES_TABLE . " SET comment = NULL WHERE id = " . intval($params['image_id']);
-    pwg_query($query);
-  }
+  // sync_metadata() relit l'IPTC du fichier et écrase 'comment' en BDD avec du texte brut.
+  // On réaffirme systématiquement la valeur voulue (HTML riche compris) juste après.
+  $comment_sql = ($comment_to_keep === null)
+    ? 'NULL'
+    : "'" . pwg_db_real_escape_string($comment_to_keep) . "'";
+  $query = 'UPDATE ' . IMAGES_TABLE . ' SET comment = ' . $comment_sql . ' WHERE id = ' . intval($params['image_id']);
+  pwg_query($query);
 
   return array(
     'stat' => 'ok',
@@ -719,7 +726,24 @@ WHERE id = ' . intval($params['image_id']);
 
   pwg_query($query);
 
+  // geotag_ws_remove_gps() ne touche jamais à la description : on réaffirme la valeur
+  // actuelle de comment après sync_metadata() pour le même motif que geotag_ws_save_gps().
+  if ($is_jpeg) {
+    $query = 'SELECT comment FROM ' . IMAGES_TABLE . ' WHERE id = ' . intval($params['image_id']);
+    $result = pwg_query($query);
+    $row_comment = pwg_db_fetch_assoc($result);
+    $comment_to_keep = $row_comment['comment'];
+  }
+
   geo_tag_sync_metadata($params['image_id']);
+
+  if ($is_jpeg) {
+    $comment_sql = ($comment_to_keep === null)
+      ? 'NULL'
+      : "'" . pwg_db_real_escape_string($comment_to_keep) . "'";
+    $query = 'UPDATE ' . IMAGES_TABLE . ' SET comment = ' . $comment_sql . ' WHERE id = ' . intval($params['image_id']);
+    pwg_query($query);
+  }
 
   return array(
     'stat' => 'ok',
@@ -792,6 +816,19 @@ function geo_tag_sync_metadata($image_id)
   invalidate_user_cache();
   
   return true;
+}
+
+// ==================== DÉRIVATION TEXTE BRUT POUR IPTC ====================
+// L'IPTC (tag 2#120, Caption-Abstract) ne supporte pas le HTML. On en dérive une version
+// texte brut pour le fichier, sans jamais relire ce texte brut pour reconstituer le HTML
+// riche stocké en BDD (round-trip à sens unique, voir handoff).
+function geo_tag_html_to_plain_text($html)
+{
+  $text = preg_replace('/<br\s*\/?>/i', "\n", $html);
+  $text = preg_replace('/<\/p>/i', "\n", $text);
+  $text = html_entity_decode(strip_tags($text), ENT_QUOTES, 'UTF-8');
+  $text = trim($text);
+  return ($text === '') ? null : $text;
 }
 
 // ==================== RÉSOLUTION DES CHEMINS ====================

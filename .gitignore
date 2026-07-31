@@ -1,0 +1,17 @@
+# Agent / IDE
+.claude/
+.vscode/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dumps SQL
+*.sql
+
+# Archives de release (générées via git archive, jamais commitées)
+*.zip

@@ -320,7 +320,6 @@ public function writeDescription($image_path, $description = null)
 
     try {
       $jpeg_data = file_get_contents($image_path);
-      error_log('GTE 1 - jpeg_data length: ' . strlen($jpeg_data));
 
       if ($jpeg_data === false) {
         @unlink($backup_path);
@@ -333,25 +332,20 @@ public function writeDescription($image_path, $description = null)
       }
 
       $existing_iptc = $this->extractIptcFromJpeg($jpeg_data);
-      error_log('GTE 2 - existing_iptc: ' . ($existing_iptc === false ? 'false' : strlen($existing_iptc) . ' bytes'));
 
       $iptc_data = ($existing_iptc !== false && strlen($existing_iptc) > 0)
                   ? $this->parseIptcProfile($existing_iptc)
                   : array();
-      error_log('GTE 3 - iptc_data keys: ' . implode(', ', array_keys($iptc_data)));
 
       if ($description !== null && strlen(trim($description)) > 0) {
         $iptc_data['2#120'] = trim($description);
       } else {
         unset($iptc_data['2#120']);
       }
-      error_log('GTE 4 - iptc_data after update, 2#120: ' . (isset($iptc_data['2#120']) ? $iptc_data['2#120'] : 'NOT SET'));
 
       $new_iptc = $this->buildIptcProfile($iptc_data);
-      error_log('GTE 5 - new_iptc length: ' . strlen($new_iptc));
 
       $new_jpeg = $this->injectIptcIntoJpeg($jpeg_data, $new_iptc);
-      error_log('GTE 6 - new_jpeg: ' . ($new_jpeg === false ? 'false' : strlen($new_jpeg) . ' bytes'));
 
       if ($new_jpeg === false) {
         @unlink($backup_path);
@@ -359,7 +353,6 @@ public function writeDescription($image_path, $description = null)
       }
 
       $written = file_put_contents($image_path, $new_jpeg);
-      error_log('GTE 7 - file_put_contents: ' . var_export($written, true));
 
       if ($written === false) {
         @copy($backup_path, $image_path);
@@ -369,11 +362,10 @@ public function writeDescription($image_path, $description = null)
 
       @unlink($backup_path);
       clearstatcache(true, $image_path);
-      error_log('GTE 8 - final filesize: ' . filesize($image_path));
       return array('success' => true);
 
     } catch (Exception $e) {
-      error_log('GTE EXCEPTION: ' . $e->getMessage());
+      error_log('geo_tag_editor: writeDescription exception - ' . $e->getMessage());
       if (file_exists($backup_path)) {
         @copy($backup_path, $image_path);
         @unlink($backup_path);
