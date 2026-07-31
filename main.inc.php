@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: geo_tag_editor
-Version: 1.8b
+Version: 1.9b
 Description: Gestion des coordonnées GPS dans les métadonnées
 Plugin URI: https://piwigo.org/ext/extension_view.php?eid=1057
 Author: Charles69
@@ -10,6 +10,9 @@ Has Settings: webmaster
 
 //============= VERSIONS ============================================
 /*
+version 1.9 - 31/07/2026test
+    ajout d'un editeur wysiwig pour la description
+
 
 version 1.8b - 27/06/2026
     bug sur coordonnées au format 37° 38′ 20″ N, 112° 10′ 12″ O
@@ -238,6 +241,8 @@ function geo_tag_load_css()
   $template->append('head_elements', '
   <link rel="stylesheet" href="' . GEOTAG_PATH . 'css/geo_tag_button.css">
   <link rel="stylesheet" href="' . GEOTAG_PATH . 'css/geo_tag_modal.css">
+  <link rel="stylesheet" href="' . GEOTAG_PATH . 'css/vendor/trumbowyg/trumbowyg.min.css">
+  <link rel="stylesheet" href="' . GEOTAG_PATH . 'css/vendor/trumbowyg/trumbowyg.colors.min.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" 
         crossorigin="" />
@@ -248,12 +253,27 @@ function geo_tag_load_css()
 add_event_handler('loc_end_page_tail', 'geo_tag_load_scripts');
 function geo_tag_load_scripts()
 {
-  global $template, $page;
+  global $template, $page, $user;
   
   if (!isset($page['image_id'])) {
     return;
   }
   
+  // Choisir la langue Trumbowyg (fr/de/ru disponibles localement, en par défaut sinon)
+  $piwigo_lang = isset($user['language']) ? $user['language'] : 'en_UK';
+  $trumbowyg_lang = 'en';
+  $trumbowyg_lang_script = '';
+  if (strpos($piwigo_lang, 'fr') === 0) {
+    $trumbowyg_lang = 'fr';
+  } elseif (strpos($piwigo_lang, 'de') === 0) {
+    $trumbowyg_lang = 'de';
+  } elseif (strpos($piwigo_lang, 'ru') === 0) {
+    $trumbowyg_lang = 'ru';
+  }
+  if ($trumbowyg_lang !== 'en') {
+    $trumbowyg_lang_script = '<script src="' . GEOTAG_PATH . 'js/vendor/trumbowyg/langs/' . $trumbowyg_lang . '.min.js"></script>';
+  }
+
   // Charger Leaflet 1.9.4 et l'isoler immédiatement avec noConflict
   $template->append('footer_elements', '
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" 
@@ -277,6 +297,15 @@ function geo_tag_load_scripts()
       }
     })();
   </script>
+  <script>
+    window.GeoTagTrumbowygSvgPath = "' . GEOTAG_PATH . 'css/vendor/trumbowyg/icons.svg";
+    window.GeoTagTrumbowygLang = "' . $trumbowyg_lang . '";
+  </script>
+  <script src="' . GEOTAG_PATH . 'js/vendor/trumbowyg/trumbowyg.min.js"></script>
+  ' . $trumbowyg_lang_script . '
+  <script src="' . GEOTAG_PATH . 'js/vendor/trumbowyg/plugins/trumbowyg.fontsize.min.js"></script>
+  <script src="' . GEOTAG_PATH . 'js/vendor/trumbowyg/plugins/trumbowyg.fontfamily.min.js"></script>
+  <script src="' . GEOTAG_PATH . 'js/vendor/trumbowyg/plugins/trumbowyg.colors.min.js"></script>
   <script src="' . GEOTAG_PATH . 'template/geo_tag.js"></script>
   ');
 }
@@ -314,6 +343,11 @@ WHERE id = ' . intval($image_id);
 
   // Récupérer la description existante
   $description = isset($row['comment']) ? $row['comment'] : '';
+
+  // Un attribut class="..." dans le HTML indique une page élaborée dépendant de CSS externe
+  // (ex. collée depuis un logiciel tiers) : on passe alors la description en lecture seule
+  // pour ne pas risquer de la dégrader avec l'éditeur.
+  $description_is_readonly = (bool) preg_match('/class\s*=\s*["\']/i', $description);
   
   $ext = strtolower(pathinfo($image_path, PATHINFO_EXTENSION));
   $is_jpeg = in_array($ext, array('jpg', 'jpeg'));
@@ -372,6 +406,7 @@ WHERE id = ' . intval($image_id);
     'gps_source' => $gps_source,
     'is_jpeg' => $is_jpeg,
     'description' => $description,
+    'description_is_readonly' => $description_is_readonly,
     'save_url' => get_root_url() . 'ws.php?format=json&method=geotag.saveGPS'
   );
   
@@ -922,7 +957,8 @@ function geotag_ws_get_translations($params, &$service)
     'Description' => l10n('Description'),
     'Description de l\'image...' => l10n('Description de l\'image...'),
     'Cliquez sur Enregistrer pour les écrire dans les métadonnées EXIF.' => l10n('Cliquez sur Enregistrer pour les écrire dans les métadonnées EXIF.'),
-    'Coordonnées trouvées en base de données mais pas dans la photo.' => l10n('Coordonnées trouvées en base de données mais pas dans la photo.')
+    'Coordonnées trouvées en base de données mais pas dans la photo.' => l10n('Coordonnées trouvées en base de données mais pas dans la photo.'),
+    'Lecture seule : mise en forme HTML complexe détectée, non modifiable ici.' => l10n('Lecture seule : mise en forme HTML complexe détectée, non modifiable ici.')
 
   );
   

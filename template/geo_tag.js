@@ -31,6 +31,7 @@
     var isJpeg = true;            // Format JPEG (EXIF supporté) ou non
     var currentDescription = '';  // Description de l'image (IPTC Caption-Abstract)
     var initialDescription = '';  // Description initiale pour détecter l'effacement
+    var isDescriptionReadonly = false;  // true si HTML complexe détecté (class="...") : édition désactivée
 
     // Variables pour les lieux personnels
     var allPlaces = [];           // Liste complète des lieux
@@ -145,6 +146,7 @@ $(document).on('click', '#geotag-open-editor', async function(e) {
   originalAltitude = data.altitude ? parseFloat(data.altitude) : null;
   currentDescription = data.description || '';  // Charger la description existante
   initialDescription = currentDescription;  // Mémoriser pour détecter l'effacement
+  isDescriptionReadonly = !!data.description_is_readonly;
   
   // ✅ CHARGER LES TRADUCTIONS AVANT D'OUVRIR LA MODALE
   try {
@@ -191,6 +193,7 @@ $(document).on('click', '#geotag-open-editor', async function(e) {
         <!-- Description de l'image (sous la photo) -->
         <div class="description-section">
           <label for="geotag-description">${_('Description')} :</label>
+          ${isDescriptionReadonly ? '<div class="geotag-description-readonly-notice">' + _('Lecture seule : mise en forme HTML complexe détectée, non modifiable ici.') + '</div>' : ''}
           <textarea id="geotag-description" rows="3" placeholder="${_('Description de l\'image...')}"></textarea>
         </div>
       </div>
@@ -286,11 +289,63 @@ $('.modal-image-area img').on('error', function() {
   );
 });
 
-// Charger la description existante dans le textarea
-$('#geotag-description').val(currentDescription);
+// Charger la description existante : Trumbowyg si éditable, affichage brut sinon
+if (isDescriptionReadonly) {
+  $('#geotag-description').replaceWith(
+    '<div id="geotag-description" class="geotag-description-readonly-view">' + currentDescription + '</div>'
+  );
+} else {
+  $('#geotag-description').trumbowyg({
+    svgPath: window.GeoTagTrumbowygSvgPath,
+    lang: window.GeoTagTrumbowygLang || 'en',
+    btns: [
+      ['formatting'],
+      ['fontfamily'],
+      ['fontsize'],
+      ['strong', 'em', 'underline'],
+      ['foreColor', 'backColor'],
+      ['unorderedList', 'orderedList'],
+      ['link'],
+      ['removeformat'],
+      ['viewHTML'],
+      ['fullscreen']
+    ],
+    btnsDef: {
+      formatting: {
+        dropdown: ['p', 'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+        ico: 'p'
+      }
+    },
+    plugins: {
+      fontsize: { sizeList: ['13px', '16px', '18px'], allowCustomSize: false },
+      fontfamily: { fontList: [
+        { name: 'Arial', family: 'Arial, Helvetica, sans-serif' },
+        { name: 'Roboto', family: 'Roboto, Arial, sans-serif' },
+        { name: 'Georgia', family: 'Georgia, serif' },
+        { name: 'Times New Roman', family: 'Times New Roman, Times, serif' },
+        { name: 'Courier New', family: 'Courier New, Courier, monospace' },
+        { name: 'Verdana', family: 'Verdana, Geneva, sans-serif' },
+        { name: 'Tahoma', family: 'Tahoma, Geneva, sans-serif' },
+        { name: 'Trebuchet MS', family: 'Trebuchet MS, Helvetica, sans-serif' }
+      ] }
+    }
+  });
+  $('#geotag-description').trumbowyg('html', currentDescription);
+
+  // Empêcher la navigation photo au clavier du cœur Piwigo (flèches, Entrée...) de capter
+  // les touches tapées dans l'éditeur : sa garde ne fonctionne pas sur un contenteditable
+  // (elle teste target.type, absent sur un <div contenteditable>). Phase capture pour
+  // intercepter avant que l'événement ne remonte au handler global document.onkeydown.
+  var trumbowygEditorEl = $('#geotag-modal .trumbowyg-editor')[0];
+  if (trumbowygEditorEl) {
+    trumbowygEditorEl.addEventListener('keydown', function(e) {
+      e.stopPropagation();
+    }, true);
+  }
+}
 
 // Mettre à jour le bouton Enregistrer quand la description change
-$('#geotag-description').on('input', function() {
+$('#geotag-description').on('tbwchange input', function() {
   updateSaveButton();
 });
 
@@ -591,9 +646,17 @@ function placeMarker(lat, lon) {
     // Activer/désactiver le bouton Enregistrer selon GPS ou description
     function updateSaveButton() {
       var hasGPS = (currentLatitude !== null && currentLongitude !== null);
-      var hasDescription = ($('#geotag-description').val() || '').trim().length > 0;
-      // Permettre l'enregistrement si la description a été effacée (non-vide → vide)
-      var descriptionCleared = (initialDescription.trim().length > 0 && !hasDescription);
+      var hasDescription, descriptionCleared;
+      if (isDescriptionReadonly) {
+        // Description en lecture seule : jamais modifiée ni effacée depuis cette modale
+        hasDescription = initialDescription.trim().length > 0;
+        descriptionCleared = false;
+      } else {
+        var descHtml = $('#geotag-description').trumbowyg('html') || '';
+        hasDescription = descHtml.replace(/<[^>]*>/g, '').trim().length > 0;
+        // Permettre l'enregistrement si la description a été effacée (non-vide → vide)
+        descriptionCleared = (initialDescription.trim().length > 0 && !hasDescription);
+      }
       $('#geotag-save-gps').prop('disabled', !hasGPS && !hasDescription && !descriptionCleared);
     }
 
@@ -857,12 +920,14 @@ function openGoogleLens(imgId) {
     // ==================== SAUVEGARDER LES COORDONNÉES GPS ====================
 
     function saveGPS() {
-      var description = $('#geotag-description').val() || '';
+      var description = isDescriptionReadonly ? '' : ($('#geotag-description').trumbowyg('html') || '');
+      var descriptionPlainText = isDescriptionReadonly ? initialDescription : description.replace(/<[^>]*>/g, '');
       var hasGPS = (currentLatitude !== null && currentLongitude !== null);
-      var hasDescription = (description.trim().length > 0);
+      var hasDescription = (descriptionPlainText.trim().length > 0);
 
       // Il faut au moins des coordonnées GPS, une description, ou un effacement de description
-      var descriptionCleared = (initialDescription.trim().length > 0 && !hasDescription);
+      // (jamais pour une description en lecture seule : elle n'est jamais considérée comme effacée ici)
+      var descriptionCleared = (!isDescriptionReadonly && initialDescription.trim().length > 0 && !hasDescription);
       if (!hasGPS && !hasDescription && !descriptionCleared) {
         alert(_('Veuillez placer un marqueur sur la carte ou saisir une description'));
         return;
@@ -881,8 +946,13 @@ function openGoogleLens(imgId) {
         }
       }
 
-      // Envoyer la description
-      formData.append('description', description);
+      // Envoyer la description seulement si elle est éditable ici : en lecture seule, on ne
+      // l'envoie jamais, pour ne jamais risquer d'écraser un HTML complexe non modifié.
+      if (!isDescriptionReadonly) {
+        // Si le champ est visuellement vide, envoyer une chaîne vide (et non le HTML "vide" de
+        // Trumbowyg, ex. <p><br></p>) pour que le serveur traite bien ça comme un effacement.
+        formData.append('description', hasDescription ? description : '');
+      }
       
       $.ajax({
         url: saveUrl,
@@ -1319,7 +1389,17 @@ updateAddPlaceButton();
       }
       
       marker = null;
-      
+
+      // Détruire proprement l'instance Trumbowyg (retire ses handlers globaux) avant le remove()
+      var $desc = $('#geotag-description');
+      if ($desc.length && $desc.data('trumbowyg')) {
+        try {
+          $desc.trumbowyg('destroy');
+        } catch (e) {
+          // Ignore
+        }
+      }
+
       // Retirer les éléments DOM
       $('#geotag-modal, #geotag-modal-overlay').remove();
       

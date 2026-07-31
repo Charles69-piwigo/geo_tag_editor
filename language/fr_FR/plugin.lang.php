@@ -153,5 +153,6 @@ $lang['Données enregistrées avec succès !'] = 'Données enregistrées avec su
 // ==================== DESCRIPTION (IPTC Caption) ====================
 $lang['Description'] = 'Description';
 $lang['Description de l\'image...'] = 'Description de l\'image...';
+$lang['Lecture seule : mise en forme HTML complexe détectée, non modifiable ici.'] = 'Lecture seule : mise en forme HTML complexe détectée, non modifiable ici.';
 
 ?>

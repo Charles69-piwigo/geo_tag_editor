@@ -308,6 +308,53 @@
   box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.25);
 }
 
+/* ============================================
+   Description : éditeur Trumbowyg
+   Thème clair par défaut de Trumbowyg conservé tel quel (choix utilisateur,
+   pas de classe "trumbowyg-dark"). Trumbowyg ne fixe pas de fond sur la zone
+   de saisie (transparent) : sans override elle hérite du fond sombre de la
+   modale et le texte (couleur sombre par défaut) devient illisible, d'où le
+   fond gris très clair ci-dessous. Le reste (toolbar, dropdowns) n'est pas
+   redéfini.
+   ============================================ */
+#geotag-modal .modal-image-area .trumbowyg-box {
+  margin: 0;
+  border-radius: 4px;
+}
+
+#geotag-modal .modal-image-area .trumbowyg-editor {
+  min-height: 70px;
+  max-height: 160px;
+  overflow-y: auto;
+  font-size: 13px;
+  line-height: 1.4;
+  background: #f2f2f2;
+  color: #222;
+}
+
+/* Description en lecture seule (HTML complexe avec class="...") */
+#geotag-modal .modal-image-area .geotag-description-readonly-notice {
+  font-size: 12px;
+  color: #ffcc66;
+  margin-bottom: 6px;
+  font-style: italic;
+}
+
+#geotag-modal .modal-image-area .geotag-description-readonly-view {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #666;
+  border-radius: 4px;
+  background: #2a2a2a;
+  color: #fff;
+  font-size: 13px;
+  box-sizing: border-box;
+  max-height: 160px;
+  overflow-y: auto;
+  line-height: 1.4;
+  cursor: not-allowed;
+}
+
 /* Boutons d'action dans la sidebar */
 #geotag-modal .sidebar-actions {
   display: flex;
