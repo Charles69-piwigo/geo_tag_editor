@@ -326,7 +326,8 @@ if (isDescriptionReadonly) {
         { name: 'Courier New', family: 'Courier New, Courier, monospace' },
         { name: 'Verdana', family: 'Verdana, Geneva, sans-serif' },
         { name: 'Tahoma', family: 'Tahoma, Geneva, sans-serif' },
-        { name: 'Trebuchet MS', family: 'Trebuchet MS, Helvetica, sans-serif' }
+        { name: 'Trebuchet MS', family: 'Trebuchet MS, Helvetica, sans-serif' },
+        { name: 'Raleway', family: 'Raleway, Arial, sans-serif' }
       ] }
     }
   });

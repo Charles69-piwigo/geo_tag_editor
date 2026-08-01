@@ -271,6 +271,11 @@
   background: #4a4a4a;
   border-radius: 4px;
   box-sizing: border-box;
+  /* Occupe tout l'espace restant sous l'image, jusqu'au bas de la colonne */
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
 #geotag-modal .modal-image-area .description-section label {
@@ -320,16 +325,46 @@
 #geotag-modal .modal-image-area .trumbowyg-box {
   margin: 0;
   border-radius: 4px;
+  /* Annule le min-height:300px par défaut de Trumbowyg : le cadre suit la hauteur donnée
+     par flex (remplit .description-section) plutôt qu'une valeur fixe de Trumbowyg. */
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 #geotag-modal .modal-image-area .trumbowyg-editor {
-  min-height: 70px;
-  max-height: 160px;
+  /* Ne pas fixer de min-height ici : Trumbowyg met déjà min-height:100% pour que le texte
+     remplisse son conteneur (.trumbowyg-editor-box, lui bien en flex:1) ; une valeur fixe
+     l'écraserait (spécificité plus forte) et laisserait un vide sous le texte. */
   overflow-y: auto;
   font-size: 13px;
   line-height: 1.4;
   background: #f2f2f2;
   color: #222;
+  box-sizing: border-box;
+}
+
+/* Plein écran : cadre à 80% de la fenêtre plutôt que 100% (Trumbowyg met top/left/width/
+   height à 0/0/100%/100% par défaut), centré, avec un léger relief pour le détacher du fond. */
+#geotag-modal .modal-image-area .trumbowyg-box.trumbowyg-fullscreen {
+  top: 10%;
+  left: 10%;
+  width: 80%;
+  height: 80%;
+  border-radius: 8px;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.6);
+}
+
+/* Trumbowyg force height:auto!important sur .trumbowyg-editor-box (le conteneur de la zone
+   de saisie) au lieu de le laisser remplir l'espace restant sous la toolbar. On réaffirme un
+   comportement flex "remplir l'espace dispo" avec une spécificité plus élevée pour gagner sur
+   cette règle, et on retire notre propre plafond sur l'éditeur. */
+#geotag-modal .modal-image-area .trumbowyg-box.trumbowyg-fullscreen .trumbowyg-editor-box {
+  flex: 1 1 auto !important;
+  height: auto !important;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 /* Description en lecture seule (HTML complexe avec class="...") */
