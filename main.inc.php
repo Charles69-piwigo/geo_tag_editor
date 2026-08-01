@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: geo_tag_editor
-Version: 1.9c
+Version: auto
 Description: Gestion des coordonnées GPS dans les métadonnées
 Plugin URI: https://piwigo.org/ext/extension_view.php?eid=1057
 Author: Charles69
@@ -11,6 +11,10 @@ Has Settings: webmaster
 //============= VERSIONS ============================================
 /*
 version 2.0 - 01/08/2026
+    réécriture de l'aide 
+    + langage FR UK DE RU
+
+version 1.9c - 01/08/2026
     ajouté Roboto et Raleway
     modification du css de l'éditeur , local et plein écran
     version auto pour PEM git

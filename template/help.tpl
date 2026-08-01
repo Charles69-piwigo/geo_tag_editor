@@ -1,244 +1,97 @@
-
-
 <div class="titrePage">
   <h2>Geo Tag Editor</h2>
 </div>
 
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            padding: 20px;
-            background: #f9f9f9;
-        }
-        h1 {
-            text-align: center;
-            color: #667eea;
-            margin-bottom: 30px;
-        }
-        .columns {
-            display: flex;
-            gap: 40px;
-            max-width: 80%;
-            margin: 0 auto;
-        }
-        .col {
-            flex: 1;
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        h2 { 
-            margin-bottom: 20px;
-            color: #667eea;
-            font-size: 2.0em;
-        }
-        h3 {
-            margin-top: 25px;
-            margin-bottom: 12px;
-            color: #764ba2;
-            font-size: 1.2em;
-        }
-        p { 
-            margin-bottom: 12px;
-            line-height: 1.6;
-            text-align: justify;
-            font-size: 1.4em;
-        }
-        ul {
-            margin: 15px 0;
-            padding-left: 25px;
-            font-size: 1.4em;
-        }
-        li {
-            margin-bottom: 8px;
-            line-height: 1.6;
-        }
-        .code {
-            font-family: 'Courier New', monospace;
-            background: #f0f0f0;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 0.9em;
-        }
-        .highlight {
-            background: #fff3cd;
-            padding: 15px;
-            border-left: 4px solid #ffc107;
-            margin: 15px 0;
-            border-radius: 4px;
-        }
-        a {
-            color: #667eea;
-            text-decoration: none;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-        @media (max-width: 968px) {
-            .columns {
-                flex-direction: column;
-            }
-        }
-    </style>
+<style>
+  .gte-help { margin:0 0 2em 20px; max-width:700px; line-height:1.6; text-align:left; }
+  .gte-help h4 { margin:1.2em 0 0.3em 0; color:#333; border-bottom:1px solid #eee; padding-bottom:2px; }
+  .gte-help p { margin:0.3em 0 0.5em 0; }
+  .gte-help ul { margin:0.3em 0 0.5em 1.2em; padding:0; }
+  .gte-help li { margin:0.2em 0; }
+  .gte-help code { background:#f4f4f4; padding:1px 5px; border-radius:3px; font-size:0.9em; }
+</style>
 
+<div class="gte-help">
 
+  <h4>{'Présentation'|@translate}</h4>
+  <p>{'Le plugin geo_tag_editor permet d\'éditer les métadonnées de géolocalisation GPS des photos directement depuis Piwigo.'|@translate}</p>
 
+  <h4>{'Fonctionnalités'|@translate}</h4>
+  <p>{'Avec ce plugin vous pouvez :'|@translate}</p>
+  <ul>
+    <li>{'Visualiser la photo avec sa position GPS actuelle'|@translate}</li>
+    <li>{'Placer ou déplacer le marqueur GPS sur une carte interactive'|@translate}</li>
+    <li>{'Rechercher une localisation par nom (via Nominatim)'|@translate}</li>
+    <li>{'Saisir des coordonnées GPS, ou coller des coordonnées copiées depuis Google Maps'|@translate}</li>
+    <li>{'Copier les coordonnées d\'une photo pour les coller dans Google Maps'|@translate}</li>
+    <li>{'Copier une position d\'une photo et la coller sur une autre'|@translate}</li>
+    <li>{'Modifier, supprimer ou enregistrer les coordonnées GPS'|@translate}</li>
+    <li>{'Rédiger une description enrichie de la photo'|@translate}</li>
+    <li>{'Identifier une localisation à l\'aide de Google Lens'|@translate}</li>
+  </ul>
 
-<div class="columns">
-    <div class="col">
-        <h2>🇫🇷 Français</h2>
-        
-        <p>Le plugin <strong>geo_tag_editor</strong> permet l'édition des tags de géolocalisation GPS.</p>
-        
-        <h3>Fonctionnalités</h3>
-        <p>Avec ce plugin vous pouvez :</p>
-        <ul>
-            <li>Visualiser la photo avec sa position GPS</li>
-            <li>Placer/déplacer le marqueur GPS sur une carte interactive</li>
-            <li>Rechercher une localisation par nom (via Nominatim)</li>
-            <li>Saisir des coordonnées GPS</li>
-            <li>Coller les coordonnées copiées depuis Google Maps</li>
-            <li>Copier les coordonnées pour les coller dans Google Maps</li>
-            <li>Copier Coller une position d'une photo à une autre</li>
-            <li>Modifier/Supprimer/Enregistrer les coordonnées GPS</li>
-            <li>Identifier une localisation avec Google Lens (la photo est téléchargée automatiqement , déplacer là dans Google Lens )</li>
-        </ul>
-        
-        <h3>Droits d'accès</h3>
-        <p>Pour pouvoir utiliser le plugin il faut être webmaster, administrateur ou un user appartenant au groupe GeoTag.</p>
-        <p>Les droits des utilisateurs sont soit globaux, soit sur des albums à spécifier.</p>
+  <h4>{'Google Lens'|@translate}</h4>
+  <p>{'Deux méthodes sont proposées pour identifier un lieu à partir de la photo :'|@translate}</p>
+  <ul>
+    <li>{'Clic droit sur l\'image → "Rechercher une image avec Google Lens" (fonctionne directement si l\'image est accessible depuis le navigateur)'|@translate}</li>
+    <li>{'Ou téléchargement de l\'image, puis dépôt manuel de celle-ci dans Google Lens'|@translate}</li>
+  </ul>
 
-        <h3>Liste de lieux personnels</h3>
-        <p>C'est une option à activer dans l'onglet "lieux personnels"</p>
-        <p>Vous pouvez établir un liste de lieux géolocalisés prêt à l'emploi, disponible ensuite dans l'éditeur de géo tag</p>
-        <p>Vous pouvez importer dans cette liste les lieux de la liste perso de pwigo_openstreetmap.</p>
-        
-        <h3>Visualisation des résultats</h3>
-        <p>Pour visualiser les résultats il faut installer/activer un plugin de géolocalisation compatible avec Piwigo, comme :</p>
-        <ul>
-            <li><strong>piwigo-openstreetmap</strong> : <a href="https://fr.piwigo.org/ext/index.php?eid=701" target="_blank">https://fr.piwigo.org/ext/index.php?eid=701</a></li>
-        </ul>
-        <p>Ces plugins permettent de visualiser instantanément le résultat de geo_tag_editor sur une carte.</p>
-        
-        <h3>Formats de métadonnées GPS</h3>
-        <p>Les tags GPS sont enregistrés dans les métadonnées des photos aux formats standards :</p>
-        <ul>
-            <li><strong>GPSLatitude / GPSLongitude</strong> (coordonnées GPS principales)</li>
-            <li><strong>GPSLatitudeRef / GPSLongitudeRef</strong> (Nord/Sud, Est/Ouest)</li>
-        </ul>
-        <p>Ces formats sont compatibles avec la plupart des logiciels de gestion de photos.</p>
-        
-        <div class="highlight">
-            <strong>✅ Compatibilité :</strong> Les tags GPS existants créés par d'autres logiciels (Lightroom, digiKam, etc.) sont pris en compte par geo_tag_editor.
-        </div>
-        
-        <h3>Permissions requises</h3>
-        <p>Il faut que les fichiers jpg aient des droits en écriture.</p>
-        <p>Pour les NAS Synology :</strong> il faut donner les droits lecture et écriture au groupe <span class="code">http</span> sur les répertoires concernés :</p>
-        <ul>
-            <li><span class="code">./data</span></li>
-            <li><span class="code">./upload</span></li>
-            <li><span class="code">./galleries</span></li>
-        </ul>
-        
-        <h3>Compatibilité des chemins</h3>
-        <p>L'édition des tags GPS fonctionne sur les photos dans :</p>
-        <ul>
-            <li><span class="code">./upload</span></li>
-            <li><span class="code">./galleries</span> directement</li>
-            <li><span class="code">./galleries</span> + liens symboliques</li>
-        </ul>
-        
-        
-        <h3>Intégration Piwigo</h3>
-        <p>Les coordonnées GPS sont enregistrées dans les métadonnées et peuvent être utilisées par les plugins de carte compatibles.</p>
-        
-        <h3>Carte interactive</h3>
-        <p>La carte utilise :</p>
-        <ul>
-            <li><strong>Leaflet.js</strong> pour l'interface de carte interactive</li>
-            <li><strong>OpenStreetMap</strong> comme fond de carte</li>
-            <li><strong>Nominatim</strong> pour la recherche de lieux</li>
-        </ul>
-    </div>
+  <h4>{'Droits d\'accès'|@translate}</h4>
+  <p>{'Seuls les webmasters, les administrateurs et les utilisateurs appartenant au groupe GeoTag peuvent utiliser le plugin. Les webmasters et administrateurs ont toujours un accès total.'|@translate}</p>
+  <p>{'Pour les membres du groupe GeoTag, l\'onglet "Gestion des droits" propose deux modes :'|@translate}</p>
+  <ul>
+    <li><strong>{'Tous les albums'|@translate}</strong> {': les utilisateurs du groupe peuvent géolocaliser toutes les photos qu\'ils peuvent voir'|@translate}</li>
+    <li><strong>{'Sélectif par utilisateur'|@translate}</strong> {': les albums autorisés sont configurés individuellement pour chaque utilisateur (jusqu\'à 5 albums, sous-albums inclus)'|@translate}</li>
+  </ul>
 
-    <div class="col">
-        <h2>🇬🇧 English</h2>
-        
-        <p>The <strong>geo_tag_editor</strong> plugin allows you to edit GPS geolocation tags.</p>
-        
-        <h3>Features</h3>
-        <p>With this plugin, you can:</p>
-        <ul>
-            <li>View the photo with its GPS location</li>
-            <li>Place/move the GPS marker on an interactive map</li>
-            <li>Search for a location by name (via Nominatim)</li>
-            <li>Enter GPS coordinates</li>
-            <li>Paste coordinates copied from Google Maps</li>
-            <li>Copy coordinates to paste into Google Maps</li>
-            <li>Copy and paste a location from one photo to another</li>
-            <li>Edit/Delete/Save GPS coordinates</li>
-            <li>Identify a location with Google Lens (the photo is automatically downloaded, move it into Google Lens)</li>
-        </ul>
-        
-        <h3>Access Rights</h3>
-        <p>To use the plugin, you must be a webmaster, administrator, or a user belonging to the GeoTag group.</p>
-        <p>User rights are either global or specific to particular albums.</p>
+  <h4>{'Lieux personnels'|@translate}</h4>
+  <p>{'L\'onglet "Lieux personnels" permet, une fois l\'option activée, d\'établir une liste de lieux géolocalisés prêts à l\'emploi, disponible ensuite dans l\'éditeur de géo tag pour géolocaliser rapidement une photo.'|@translate}</p>
+  <p>{'Si le plugin piwigo_openstreetmap est installé, ses lieux personnels peuvent être importés dans cette liste.'|@translate}</p>
 
-        <h3>Personal Places List</h3>
-        <p>This is an option to enable in the "Personal Places" tab.</p>
-        <p>You can create a ready-to-use list of geolocated places, which will then be available in the geotag editor.</p>
-        <p>You can import places from pwigo_openstreetmap's personal list into this list.</p>
-        
-        <h3>Viewing Results</h3>
-        <p>To view the results, you must install/activate a geolocation plugin compatible with Piwigo, such as:</p>
-        <ul>
-            <li><strong>piwigo-openstreetmap</strong>: <a href="https://piwigo.org/ext/index.php?eid=701" target="_blank">https://piwigo.org/ext/index.php?eid=701</a></li>
-        </ul>
-        <p>These plugins allow you to instantly view the results of geo_tag_editor on a map.</p>
-        
-        <h3>GPS Metadata Formats</h3>
-        <p>GPS tags are saved in the photo's metadata in standard formats:</p>
-        <ul>
-            <li><strong>GPSLatitude / GPSLongitude</strong> (main GPS coordinates)</li>
-            <li><strong>GPSLatitudeRef / GPSLongitudeRef</strong> (North/South, East/West)</li>
-        </ul>
-        <p>These formats are compatible with most photo management software.</p>
-        
-        <div class="highlight">
-            <strong>✅ Compatibility:</strong> Existing GPS tags created by other software (Lightroom, digiKam, etc.) are recognized by geo_tag_editor.
-        </div>
-        
-        <h3>Required Permissions</h3>
-        <p>JPG files must have write permissions.</p>
-        <p>For Synology NAS devices:</strong> you must grant read and write permissions to the <span class="code">http</span> group on the relevant directories:</p>
-        <ul>
-            <li><span class="code">./data</span></li>
-            <li><span class="code">./upload</span></li>
-            <li><span class="code">./galleries</span></li>
-        </ul>
-        
-        <h3>Path Compatibility</h3>
-        <p>GPS tag editing works on photos in:</p>
-        <ul>
-            <li><span class="code">./upload</span></li>
-            <li>directly in <span class="code">./galleries</span></li>
-            <li><span class="code">./galleries</span> with symbolic links</li>
-        </ul>
-        
-        <h3>Piwigo Integration</h3>
-        <p>GPS coordinates are saved in metadata and can be used by compatible map plugins.</p>
-        
-        <h3>Interactive Map</h3>
-        <p>The map uses:</p>
-        <ul>
-            <li><strong>Leaflet.js</strong> for the interactive map interface</li>
-            <li><strong>OpenStreetMap</strong> as base map</li>
-            <li><strong>Nominatim</strong> for location search</li>
-        </ul>
-    </div>
+  <h4>{'Description'|@translate}</h4>
+  <p>{'Un éditeur de texte enrichi (Trumbowyg) permet de rédiger ou modifier la description de la photo directement depuis la fenêtre de géolocalisation : mise en forme (gras, italique, souligné, couleurs, polices), listes, liens, mode plein écran.'|@translate}</p>
+  <p>{'L\'enregistrement de la position GPS et celui de la description sont totalement indépendants : enregistrer l\'un ne modifie ni n\'efface l\'autre.'|@translate}</p>
+  <p>{'Si une description existante contient une mise en forme HTML complexe, elle s\'affiche en lecture seule pour éviter de l\'altérer involontairement.'|@translate}</p>
+
+  <h4>{'Formats de métadonnées GPS'|@translate}</h4>
+  <p>{'Les tags GPS sont enregistrés dans les métadonnées des photos aux formats standards :'|@translate}</p>
+  <ul>
+    <li><strong>{'GPSLatitude / GPSLongitude'|@translate}</strong> {'(coordonnées GPS principales)'|@translate}</li>
+    <li><strong>{'GPSLatitudeRef / GPSLongitudeRef'|@translate}</strong> {'(Nord/Sud, Est/Ouest)'|@translate}</li>
+  </ul>
+  <p>{'Ces formats sont compatibles avec la plupart des logiciels de gestion de photos. Les tags GPS existants créés par d\'autres logiciels (Lightroom, digiKam, etc.) sont reconnus par geo_tag_editor.'|@translate}</p>
+  <p>{'Pour les formats non-JPEG, l\'écriture dans les métadonnées du fichier n\'est pas possible : les coordonnées sont alors enregistrées uniquement en base de données.'|@translate}</p>
+
+  <h4>{'Visualisation des résultats'|@translate}</h4>
+  <p>{'Pour visualiser les résultats sur une carte, il faut installer et activer un plugin de géolocalisation compatible avec Piwigo, comme :'|@translate}</p>
+  <ul>
+    <li><strong>piwigo-openstreetmap</strong> : <a href="https://fr.piwigo.org/ext/index.php?eid=701" target="_blank">https://fr.piwigo.org/ext/index.php?eid=701</a></li>
+  </ul>
+
+  <h4>{'Permissions requises'|@translate}</h4>
+  <p>{'Les fichiers photo doivent avoir des droits en écriture.'|@translate}</p>
+  <p>{'Pour les NAS Synology, il faut donner les droits lecture et écriture au groupe'|@translate} <code>http</code> {'sur les répertoires concernés :'|@translate}</p>
+  <ul>
+    <li><code>./data</code></li>
+    <li><code>./upload</code></li>
+    <li><code>./galleries</code></li>
+  </ul>
+
+  <h4>{'Compatibilité des chemins'|@translate}</h4>
+  <p>{'L\'édition des tags GPS fonctionne sur les photos situées dans :'|@translate}</p>
+  <ul>
+    <li><code>./upload</code></li>
+    <li><code>./galleries</code> {'directement'|@translate}</li>
+    <li><code>./galleries</code> {'via des liens symboliques'|@translate}</li>
+  </ul>
+
+  <h4>{'Carte interactive'|@translate}</h4>
+  <p>{'La carte utilise :'|@translate}</p>
+  <ul>
+    <li><strong>Leaflet.js</strong> {'pour l\'interface de carte interactive'|@translate}</li>
+    <li><strong>OpenStreetMap</strong> {'comme fond de carte'|@translate}</li>
+    <li><strong>Nominatim</strong> {'pour la recherche de lieux'|@translate}</li>
+  </ul>
+
 </div>
-
-</body>
-</html>

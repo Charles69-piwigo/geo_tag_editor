@@ -10,6 +10,9 @@ logs/
 .DS_Store
 Thumbs.db
 
+# Doc interne (local uniquement)
+STRUCTURE.md
+
 # Dumps SQL
 *.sql
 
