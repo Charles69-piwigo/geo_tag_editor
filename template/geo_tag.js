@@ -1289,6 +1289,10 @@ function showAllPlaces() {
       // Placer le marqueur sur la carte
       placeMarker(currentLatitude, currentLongitude);
       
+      // Recentrer la carte sur le lieu appliqué
+      map.setView([currentLatitude, currentLongitude], 15);
+
+
       // Activer les boutons
       // Activer les boutons de copie
 $('#geotag-copy-position').prop('disabled', false);
