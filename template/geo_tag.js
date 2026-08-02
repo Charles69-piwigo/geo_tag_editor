@@ -333,6 +333,29 @@ if (isDescriptionReadonly) {
   });
   $('#geotag-description').trumbowyg('html', currentDescription);
 
+  // Bug connu de Trumbowyg : toggleSpan() (déclenché par Entrée/Retour arrière/Suppr,
+  // keyCodes 8/13/46) est censé ne supprimer que les spans "fantômes" vides créés
+  // par le navigateur lors d'un saut de ligne, mais sa détection par flag
+  // (data-tbw-flag) est trop fragile : this.$ed.find("span") cherche dans TOUT
+  // l'éditeur, et si un seul span existant perd son flag entre le keydown et le
+  // keyup, il est traité comme fantôme et supprimé (contenu conservé, style perdu)
+  // même sans rapport avec l'édition en cours. On remplace par une version qui ne
+  // nettoie que les spans réellement vides ou sans attribut significatif.
+  var trumbowygInstance = $('#geotag-description').data('trumbowyg');
+  if (trumbowygInstance) {
+    var trumbowygProto = Object.getPrototypeOf(trumbowygInstance);
+    trumbowygProto.toggleSpan = function() {
+      this.$ed.find('span').each(function() {
+        var $span = $(this);
+        var isEmpty = $span.contents().length === 0;
+        var hasNoFormatting = !$span.attr('style') && !$span.attr('class') && $span.text().trim() === '';
+        if (isEmpty || hasNoFormatting) {
+          $span.contents().unwrap();
+        }
+      });
+    };
+  }
+
   // Empêcher la navigation photo au clavier du cœur Piwigo (flèches, Entrée...) de capter
   // les touches tapées dans l'éditeur : sa garde ne fonctionne pas sur un contenteditable
   // (elle teste target.type, absent sur un <div contenteditable>). Phase capture pour

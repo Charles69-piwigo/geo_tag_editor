@@ -10,6 +10,9 @@ Has Settings: webmaster
 
 //============= VERSIONS ============================================
 /*
+version 2.0b - 02/08/2026
+    patché bug trumbowyg ( perte du formatage)
+    
 version 2.0a - 02/08/2026
     ajouté plusieurs tailles polices + saisie libre
 
