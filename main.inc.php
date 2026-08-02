@@ -10,7 +10,12 @@ Has Settings: webmaster
 
 //============= VERSIONS ============================================
 /*
-version 2.0b - 02/08/2026
+version 2.0c - 02/08/2026
+    corrigé : éditeur innaccessible avec les photos portrait
+    ajouté outils alignement + undo redo
+    css de l'éditeur en mode source
+
+version 2.0b - 02/08/2026 (publié)
     patché bug trumbowyg ( perte du formatage)
     
 version 2.0a - 02/08/2026

@@ -271,11 +271,16 @@
   background: #4a4a4a;
   border-radius: 4px;
   box-sizing: border-box;
-  /* Occupe tout l'espace restant sous l'image, jusqu'au bas de la colonne */
+  /* Occupe tout l'espace restant sous l'image, jusqu'au bas de la colonne.
+     min-height (pas 0) : avec une photo portrait qui remplit toute la hauteur
+     de la colonne, un flex-item en min-height:0 se retrouve écrasé à ~0px
+     (le flex shrink l'emporte). Avec un plancher, la section garde une taille
+     utilisable, dépasse la hauteur de .modal-image-area (overflow-y:auto) et
+     devient donc atteignable en scrollant, au lieu de disparaître. */
   display: flex;
   flex-direction: column;
   flex: 1;
-  min-height: 0;
+  min-height: 220px;
 }
 
 #geotag-modal .modal-image-area .description-section label {
@@ -343,6 +348,30 @@
   background: #f2f2f2;
   color: #222;
   box-sizing: border-box;
+}
+
+/* Mode source (bouton viewHTML) : Trumbowyg réutilise le <textarea id="geotag-description">
+   d'origine (ajoute juste la classe .trumbowyg-textarea dessus), donc l'ancienne règle
+   "#geotag-modal .modal-image-area #geotag-description" (fond sombre + min/max-height 70/120px,
+   héritée du textarea brut d'avant Trumbowyg) reste plus spécifique (sélecteur ID) qu'une règle
+   par simple classe et l'emportait silencieusement. Il faut donc cibler la combinaison
+   ID+classe pour gagner en spécificité, remettre le même fond que l'éditeur standard, et
+   remplacer le plafond de 120px par un remplissage du conteneur (comme .trumbowyg-editor). */
+#geotag-modal .modal-image-area #geotag-description.trumbowyg-textarea {
+  background: #f2f2f2;
+  color: #222;
+  min-height: 0;
+  max-height: none;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+/* .trumbowyg-editor-box (conteneur commun à l'éditeur visuel et au mode source) n'a pas de
+   fond propre chez Trumbowyg : en mode source, la partie du conteneur non couverte par le
+   textarea (padding/reliquat de hauteur) laissait apparaître le blanc par défaut du navigateur
+   au lieu du fond de l'éditeur. */
+#geotag-modal .modal-image-area .trumbowyg-editor-box {
+  background: #f2f2f2;
 }
 
 /* Plein écran : cadre à 80% de la fenêtre plutôt que 100% (Trumbowyg met top/left/width/
