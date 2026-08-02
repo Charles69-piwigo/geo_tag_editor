@@ -10,7 +10,10 @@ Has Settings: webmaster
 
 //============= VERSIONS ============================================
 /*
-version 2.0 - 01/08/2026
+version 2.0a - 02/08/2026
+    ajouté plusieurs tailles polices + saisie libre
+
+version 2.0 - 01/08/2026 (publié)
     réécriture de l'aide 
     + langage FR UK DE RU
 

@@ -317,7 +317,7 @@ if (isDescriptionReadonly) {
       }
     },
     plugins: {
-      fontsize: { sizeList: ['13px', '16px', '18px'], allowCustomSize: false },
+      fontsize: { sizeList: ['11px', '13px', '16px', '18px', '24px'], allowCustomSize: true },
       fontfamily: { fontList: [
         { name: 'Arial', family: 'Arial, Helvetica, sans-serif' },
         { name: 'Roboto', family: 'Roboto, Arial, sans-serif' },
