@@ -154,6 +154,7 @@ $lang['Données enregistrées avec succès !'] = 'Daten erfolgreich gespeichert!
 $lang['Description'] = 'Beschreibung';
 $lang['Description de l\'image...'] = 'Bildbeschreibung...';
 $lang['Lecture seule : mise en forme HTML complexe détectée, non modifiable ici.'] = 'Schreibgeschützt: komplexe HTML-Formatierung erkannt, hier nicht bearbeitbar.';
+$lang['Ne pas enregistrer dans les métadonnées'] = 'Nicht in den Metadaten speichern';
 
 // ==================== HILFESEITE ====================
 $lang['Présentation'] = 'Übersicht';
@@ -181,6 +182,8 @@ $lang['Si le plugin piwigo_openstreetmap est installé, ses lieux personnels peu
 $lang['Un éditeur de texte enrichi (Trumbowyg) permet de rédiger ou modifier la description de la photo directement depuis la fenêtre de géolocalisation : mise en forme (gras, italique, souligné, couleurs, polices), listes, liens, mode plein écran.'] = 'Ein Rich-Text-Editor (Trumbowyg) ermöglicht es, die Beschreibung des Fotos direkt aus dem Geolokalisierungsfenster zu verfassen oder zu bearbeiten: Formatierung (fett, kursiv, unterstrichen, Farben, Schriftarten), Listen, Links, Vollbildmodus.';
 $lang['L\'enregistrement de la position GPS et celui de la description sont totalement indépendants : enregistrer l\'un ne modifie ni n\'efface l\'autre.'] = 'Das Speichern der GPS-Position und das Speichern der Beschreibung sind vollständig unabhängig: Das Speichern des einen ändert oder löscht das andere nicht.';
 $lang['Si une description existante contient une mise en forme HTML complexe, elle s\'affiche en lecture seule pour éviter de l\'altérer involontairement.'] = 'Wenn eine vorhandene Beschreibung eine komplexe HTML-Formatierung enthält, wird sie schreibgeschützt angezeigt, um eine unbeabsichtigte Veränderung zu vermeiden.';
+$lang['L\'enregistrement de la description dans les métadonnées de la photo est automatique. Pour gérer cet enregistrement manuellement, ajoutez'] = 'Das Speichern der Beschreibung in den Metadaten des Fotos erfolgt automatisch. Um dies manuell zu steuern, fügen Sie';
+$lang['dans Local File Editor.'] = 'in den Local File Editor ein.';
 $lang['Formats de métadonnées GPS'] = 'GPS-Metadatenformate';
 $lang['Les tags GPS sont enregistrés dans les métadonnées des photos aux formats standards :'] = 'Die GPS-Tags werden in den Metadaten der Fotos in Standardformaten gespeichert:';
 $lang['GPSLatitude / GPSLongitude'] = 'GPSLatitude / GPSLongitude';

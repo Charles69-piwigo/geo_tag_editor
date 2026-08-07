@@ -291,6 +291,17 @@
   font-weight: bold;
 }
 
+#geotag-modal .modal-image-area .description-section label.geotag-erase-metadata-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #ccc;
+  font-size: 12px;
+  font-weight: normal;
+  font-style: italic;
+  margin-bottom: 8px;
+}
+
 #geotag-modal .modal-image-area #geotag-description {
   width: 100%;
   padding: 10px;
@@ -343,7 +354,10 @@
      remplisse son conteneur (.trumbowyg-editor-box, lui bien en flex:1) ; une valeur fixe
      l'écraserait (spécificité plus forte) et laisserait un vide sous le texte. */
   overflow-y: auto;
-  font-size: 13px;
+  /* Alignée sur la taille par défaut du thème (h5.imageComment = 1.25rem = 18px avec
+     bootswatch-journal), pour que le texte sans mise en forme explicite se comporte pareil
+     dans l'éditeur et dans la galerie. */
+  font-size: 18px;
   line-height: 1.4;
   background: #f2f2f2;
   color: #222;
@@ -372,6 +386,17 @@
    au lieu du fond de l'éditeur. */
 #geotag-modal .modal-image-area .trumbowyg-editor-box {
   background: #f2f2f2;
+}
+
+/* "Citation" (formatting > blockquote) : Trumbowyg ne stylise <blockquote> que si l'option
+   resetCss est activée à l'init (pas notre cas, ça toucherait aussi h1-h4/listes sans qu'on l'ait
+   vérifié). Le CSS du thème (bootstrap.css) remet par ailleurs margin:0 sur blockquote,
+   partagé globalement. Sans cette règle, une citation était donc visuellement indiscernable
+   d'un paragraphe normal. */
+#geotag-modal .modal-image-area .trumbowyg-editor blockquote {
+  margin: 0 0 0 32px;
+  font-style: italic;
+  color: #555;
 }
 
 /* Plein écran : cadre à 80% de la fenêtre plutôt que 100% (Trumbowyg met top/left/width/
@@ -411,7 +436,7 @@
   border-radius: 4px;
   background: #2a2a2a;
   color: #fff;
-  font-size: 13px;
+  font-size: 18px;
   box-sizing: border-box;
   max-height: 160px;
   overflow-y: auto;

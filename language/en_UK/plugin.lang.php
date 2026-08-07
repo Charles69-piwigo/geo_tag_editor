@@ -155,6 +155,7 @@ $lang['Données enregistrées avec succès !'] = 'Data saved successfully!';
 $lang['Description'] = 'Description';
 $lang['Description de l\'image...'] = 'Image description...';
 $lang['Lecture seule : mise en forme HTML complexe détectée, non modifiable ici.'] = 'Read-only: complex HTML formatting detected, cannot be edited here.';
+$lang['Ne pas enregistrer dans les métadonnées'] = 'Do not save to metadata';
 
 // ==================== HELP PAGE ====================
 $lang['Présentation'] = 'Overview';
@@ -182,6 +183,8 @@ $lang['Si le plugin piwigo_openstreetmap est installé, ses lieux personnels peu
 $lang['Un éditeur de texte enrichi (Trumbowyg) permet de rédiger ou modifier la description de la photo directement depuis la fenêtre de géolocalisation : mise en forme (gras, italique, souligné, couleurs, polices), listes, liens, mode plein écran.'] = 'A rich-text editor (Trumbowyg) lets you write or edit the photo description directly from the geolocation window: formatting (bold, italic, underline, colors, fonts), lists, links, fullscreen mode.';
 $lang['L\'enregistrement de la position GPS et celui de la description sont totalement indépendants : enregistrer l\'un ne modifie ni n\'efface l\'autre.'] = 'Saving the GPS position and saving the description are completely independent: saving one never changes or erases the other.';
 $lang['Si une description existante contient une mise en forme HTML complexe, elle s\'affiche en lecture seule pour éviter de l\'altérer involontairement.'] = 'If an existing description contains complex HTML formatting, it is displayed read-only to avoid altering it unintentionally.';
+$lang['L\'enregistrement de la description dans les métadonnées de la photo est automatique. Pour gérer cet enregistrement manuellement, ajoutez'] = 'Saving the description to the photo\'s metadata is automatic. To manage this manually, add';
+$lang['dans Local File Editor.'] = 'to Local File Editor.';
 $lang['Formats de métadonnées GPS'] = 'GPS Metadata Formats';
 $lang['Les tags GPS sont enregistrés dans les métadonnées des photos aux formats standards :'] = 'GPS tags are saved in the photo\'s metadata using standard formats:';
 $lang['GPSLatitude / GPSLongitude'] = 'GPSLatitude / GPSLongitude';

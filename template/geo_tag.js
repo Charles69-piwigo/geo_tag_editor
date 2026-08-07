@@ -32,6 +32,7 @@
     var currentDescription = '';  // Description de l'image (IPTC Caption-Abstract)
     var initialDescription = '';  // Description initiale pour détecter l'effacement
     var isDescriptionReadonly = false;  // true si HTML complexe détecté (class="...") : édition désactivée
+    var eraseMetadataEnabled = false;   // true si $conf['geo_tag_editor_write_comment'] = 'onoff' côté serveur
 
     // Variables pour les lieux personnels
     var allPlaces = [];           // Liste complète des lieux
@@ -147,6 +148,7 @@ $(document).on('click', '#geotag-open-editor', async function(e) {
   currentDescription = data.description || '';  // Charger la description existante
   initialDescription = currentDescription;  // Mémoriser pour détecter l'effacement
   isDescriptionReadonly = !!data.description_is_readonly;
+  eraseMetadataEnabled = !!data.erase_metadata_enabled;
   
   // ✅ CHARGER LES TRADUCTIONS AVANT D'OUVRIR LA MODALE
   try {
@@ -193,6 +195,7 @@ $(document).on('click', '#geotag-open-editor', async function(e) {
         <!-- Description de l'image (sous la photo) -->
         <div class="description-section">
           <label for="geotag-description">${_('Description')} :</label>
+          ${eraseMetadataEnabled ? '<label class="geotag-erase-metadata-label"><input type="checkbox" id="geotag-erase-metadata"> ' + _('Ne pas enregistrer dans les métadonnées') + '</label>' : ''}
           ${isDescriptionReadonly ? '<div class="geotag-description-readonly-notice">' + _('Lecture seule : mise en forme HTML complexe détectée, non modifiable ici.') + '</div>' : ''}
           <textarea id="geotag-description" rows="3" placeholder="${_('Description de l\'image...')}"></textarea>
         </div>
@@ -319,7 +322,7 @@ if (isDescriptionReadonly) {
       }
     },
     plugins: {
-      fontsize: { sizeList: ['11px', '13px', '16px', '18px', '24px'], allowCustomSize: true },
+      fontsize: { sizeList: ['14px', '16px', '18px', '22px', '24px', '26px'], allowCustomSize: true },
       fontfamily: { fontList: [
         { name: 'Arial', family: 'Arial, Helvetica, sans-serif' },
         { name: 'Roboto', family: 'Roboto, Arial, sans-serif' },
@@ -951,10 +954,13 @@ function openGoogleLens(imgId) {
       var hasGPS = (currentLatitude !== null && currentLongitude !== null);
       var hasDescription = (descriptionPlainText.trim().length > 0);
 
-      // Il faut au moins des coordonnées GPS, une description, ou un effacement de description
+      // Il faut au moins des coordonnées GPS, une description, un effacement de description, ou
+      // la case "ne pas enregistrer dans les métadonnées" cochée seule (ex. lecture seule, juste
+      // purger le tag IPTC existant sans déplacer le marqueur)
       // (jamais pour une description en lecture seule : elle n'est jamais considérée comme effacée ici)
       var descriptionCleared = (!isDescriptionReadonly && initialDescription.trim().length > 0 && !hasDescription);
-      if (!hasGPS && !hasDescription && !descriptionCleared) {
+      var eraseMetadataChecked = eraseMetadataEnabled && $('#geotag-erase-metadata').is(':checked');
+      if (!hasGPS && !hasDescription && !descriptionCleared && !eraseMetadataChecked) {
         alert(_('Veuillez placer un marqueur sur la carte ou saisir une description'));
         return;
       }
@@ -978,6 +984,12 @@ function openGoogleLens(imgId) {
         // Si le champ est visuellement vide, envoyer une chaîne vide (et non le HTML "vide" de
         // Trumbowyg, ex. <p><br></p>) pour que le serveur traite bien ça comme un effacement.
         formData.append('description', hasDescription ? description : '');
+      }
+
+      // Case "ne pas enregistrer dans les métadonnées" : indépendante du mode lecture seule,
+      // purge le tag IPTC sans jamais toucher à la description en BDD (voir main.inc.php).
+      if (eraseMetadataEnabled) {
+        formData.append('erase_metadata', eraseMetadataChecked ? '1' : '0');
       }
       
       $.ajax({

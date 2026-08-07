@@ -10,6 +10,10 @@ Has Settings: webmaster
 
 //============= VERSIONS ============================================
 /*
+version 2.0d - 03/08/2026
+    ajouté case à cocher optionnelle "ne pas enregistrer dans les métadonnées" (purge IPTC),
+    désactivée par défaut, activable via $conf['geo_tag_editor_write_comment'] = 'onoff'
+
 version 2.0c - 02/08/2026
     corrigé : éditeur innaccessible avec les photos portrait
     ajouté outils alignement + undo redo
@@ -336,7 +340,7 @@ add_event_handler('loc_end_picture', 'geo_tag_add_button');
 
 function geo_tag_add_button()
 {
-  global $template, $user, $page;
+  global $template, $user, $page, $conf;
   
   if (!isset($page['image_id'])) {
     return;
@@ -369,6 +373,11 @@ WHERE id = ' . intval($image_id);
   // (ex. collée depuis un logiciel tiers) : on passe alors la description en lecture seule
   // pour ne pas risquer de la dégrader avec l'éditeur.
   $description_is_readonly = (bool) preg_match('/class\s*=\s*["\']/i', $description);
+
+  // Fonctionnalité optionnelle : case "ne pas enregistrer dans les métadonnées" (purge du tag
+  // IPTC Caption-Abstract sans toucher à la description en BDD). Désactivée par défaut, à
+  // activer explicitement via $conf['geo_tag_editor_write_comment'] = 'onoff' (config.inc.php).
+  $erase_metadata_enabled = isset($conf['geo_tag_editor_write_comment']) && $conf['geo_tag_editor_write_comment'] === 'onoff';
   
   $ext = strtolower(pathinfo($image_path, PATHINFO_EXTENSION));
   $is_jpeg = in_array($ext, array('jpg', 'jpeg'));
@@ -428,6 +437,7 @@ WHERE id = ' . intval($image_id);
     'is_jpeg' => $is_jpeg,
     'description' => $description,
     'description_is_readonly' => $description_is_readonly,
+    'erase_metadata_enabled' => $erase_metadata_enabled,
     'save_url' => get_root_url() . 'ws.php?format=json&method=geotag.saveGPS'
   );
   
@@ -478,6 +488,7 @@ function geo_tag_add_ws_methods($arr)
       'longitude' => array('default' => null),
       'altitude' => array('default' => null),
       'description' => array('default' => null),
+      'erase_metadata' => array('default' => null),
     ),
     'Save GPS coordinates and description to image metadata',
     null,
@@ -548,6 +559,8 @@ $service->addMethod(
 // ==================== FONCTION WEB SERVICE: SAUVEGARDER GPS ====================
 function geotag_ws_save_gps($params, &$service)
 {
+  global $conf;
+
   if (empty($params['image_id'])) {
     return new PwgError(WS_ERR_INVALID_PARAM, 'Missing image_id');
   }
@@ -663,9 +676,22 @@ WHERE id = ' . intval($params['image_id']);
     $comment_to_keep = $row_comment['comment'];
   }
 
-  // Écrire la description IPTC (Caption-Abstract 2#120) seulement si une description a été
-  // explicitement envoyée dans cette requête. Sinon on ne touche pas au tag IPTC existant.
-  if ($description_sent) {
+  // Fonctionnalité optionnelle "ne pas enregistrer dans les métadonnées" : purge du tag IPTC
+  // Caption-Abstract (2#120) quelle que soit la description envoyée (ou son absence, ex. mode
+  // lecture seule), sans jamais toucher à 'comment' en BDD (voir $comment_to_keep ci-dessus).
+  // Revalidation du flag de config côté serveur : ne jamais faire confiance au seul flag client.
+  $erase_metadata_enabled = isset($conf['geo_tag_editor_write_comment']) && $conf['geo_tag_editor_write_comment'] === 'onoff';
+  $erase_metadata = $erase_metadata_enabled && !empty($params['erase_metadata']) && filter_var($params['erase_metadata'], FILTER_VALIDATE_BOOLEAN);
+
+  if ($erase_metadata) {
+    $desc_result = $writer->writeDescription($image_path, null);
+
+    if (!$desc_result['success']) {
+      error_log('geo_tag_editor: Warning - Failed to erase IPTC description: ' . $desc_result['error']);
+    }
+  } elseif ($description_sent) {
+    // Écrire la description IPTC (Caption-Abstract 2#120) seulement si une description a été
+    // explicitement envoyée dans cette requête. Sinon on ne touche pas au tag IPTC existant.
     $iptc_description = ($description !== null) ? geo_tag_html_to_plain_text($description) : null;
     $desc_result = $writer->writeDescription($image_path, $iptc_description);
 
@@ -979,7 +1005,8 @@ function geotag_ws_get_translations($params, &$service)
     'Description de l\'image...' => l10n('Description de l\'image...'),
     'Cliquez sur Enregistrer pour les écrire dans les métadonnées EXIF.' => l10n('Cliquez sur Enregistrer pour les écrire dans les métadonnées EXIF.'),
     'Coordonnées trouvées en base de données mais pas dans la photo.' => l10n('Coordonnées trouvées en base de données mais pas dans la photo.'),
-    'Lecture seule : mise en forme HTML complexe détectée, non modifiable ici.' => l10n('Lecture seule : mise en forme HTML complexe détectée, non modifiable ici.')
+    'Lecture seule : mise en forme HTML complexe détectée, non modifiable ici.' => l10n('Lecture seule : mise en forme HTML complexe détectée, non modifiable ici.'),
+    'Ne pas enregistrer dans les métadonnées' => l10n('Ne pas enregistrer dans les métadonnées')
 
   );
   

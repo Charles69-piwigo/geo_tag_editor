@@ -53,6 +53,7 @@
   <p>{'Un éditeur de texte enrichi (Trumbowyg) permet de rédiger ou modifier la description de la photo directement depuis la fenêtre de géolocalisation : mise en forme (gras, italique, souligné, couleurs, polices), listes, liens, mode plein écran.'|@translate}</p>
   <p>{'L\'enregistrement de la position GPS et celui de la description sont totalement indépendants : enregistrer l\'un ne modifie ni n\'efface l\'autre.'|@translate}</p>
   <p>{'Si une description existante contient une mise en forme HTML complexe, elle s\'affiche en lecture seule pour éviter de l\'altérer involontairement.'|@translate}</p>
+  <p>{'L\'enregistrement de la description dans les métadonnées de la photo est automatique. Pour gérer cet enregistrement manuellement, ajoutez'|@translate} <code>$conf['geo_tag_editor_write_comment'] = 'onoff';</code> {'dans Local File Editor.'|@translate}</p>
 
   <h4>{'Formats de métadonnées GPS'|@translate}</h4>
   <p>{'Les tags GPS sont enregistrés dans les métadonnées des photos aux formats standards :'|@translate}</p>
