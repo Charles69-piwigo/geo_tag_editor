@@ -284,7 +284,7 @@ function geo_tag_load_scripts()
     return;
   }
   
-  // Choisir la langue Trumbowyg (fr/de/ru disponibles localement, en par défaut sinon)
+  // Choisir la langue Trumbowyg (fr/de/ru/it disponibles localement, en par défaut sinon)
   $piwigo_lang = isset($user['language']) ? $user['language'] : 'en_UK';
   $trumbowyg_lang = 'en';
   $trumbowyg_lang_script = '';
@@ -294,9 +294,27 @@ function geo_tag_load_scripts()
     $trumbowyg_lang = 'de';
   } elseif (strpos($piwigo_lang, 'ru') === 0) {
     $trumbowyg_lang = 'ru';
+  } elseif (strpos($piwigo_lang, 'it') === 0) {
+    $trumbowyg_lang = 'it';
   }
   if ($trumbowyg_lang !== 'en') {
     $trumbowyg_lang_script = '<script src="' . GEOTAG_PATH . 'js/vendor/trumbowyg/langs/' . $trumbowyg_lang . '.min.js"></script>';
+  }
+
+  // Éviter le double chargement de la librairie Trumbowyg quand face_tag_editor est aussi actif :
+  // le script core fait une affectation directe (jQuery.trumbowyg = {...}) et non un $.extend,
+  // donc une seconde exécution efface les traductions déjà chargées par l'autre plugin (issue #2
+  // de face_tag_editor). Peu importe l'ordre de chargement, le premier plugin exécuté définit
+  // la constante et le second saute son propre chargement redondant (fichiers strictement
+  // identiques entre les deux plugins).
+  $trumbowyg_shared_scripts = '';
+  if (!defined('TRUMBOWYG_CORE_LOADED')) {
+    define('TRUMBOWYG_CORE_LOADED', true);
+    $trumbowyg_shared_scripts = '
+  <script src="' . GEOTAG_PATH . 'js/vendor/trumbowyg/trumbowyg.min.js"></script>
+  <script src="' . GEOTAG_PATH . 'js/vendor/trumbowyg/plugins/trumbowyg.fontsize.min.js"></script>
+  <script src="' . GEOTAG_PATH . 'js/vendor/trumbowyg/plugins/trumbowyg.fontfamily.min.js"></script>
+  <script src="' . GEOTAG_PATH . 'js/vendor/trumbowyg/plugins/trumbowyg.colors.min.js"></script>';
   }
 
   // Charger Leaflet 1.9.4 et l'isoler immédiatement avec noConflict
@@ -326,11 +344,8 @@ function geo_tag_load_scripts()
     window.GeoTagTrumbowygSvgPath = "' . GEOTAG_PATH . 'css/vendor/trumbowyg/icons.svg";
     window.GeoTagTrumbowygLang = "' . $trumbowyg_lang . '";
   </script>
-  <script src="' . GEOTAG_PATH . 'js/vendor/trumbowyg/trumbowyg.min.js"></script>
+  ' . $trumbowyg_shared_scripts . '
   ' . $trumbowyg_lang_script . '
-  <script src="' . GEOTAG_PATH . 'js/vendor/trumbowyg/plugins/trumbowyg.fontsize.min.js"></script>
-  <script src="' . GEOTAG_PATH . 'js/vendor/trumbowyg/plugins/trumbowyg.fontfamily.min.js"></script>
-  <script src="' . GEOTAG_PATH . 'js/vendor/trumbowyg/plugins/trumbowyg.colors.min.js"></script>
   <script src="' . GEOTAG_PATH . 'template/geo_tag.js"></script>
   ');
 }
