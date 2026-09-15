@@ -10,6 +10,13 @@ Has Settings: webmaster
 
 //============= VERSIONS ============================================
 /*
+version 2.1 - 15/09/2026
+    corrigé : conflit avec face_tag_editor quand les deux plugins chargent Trumbowyg sur la même
+    page (le second chargement réinitialisait jQuery.trumbowyg et effaçait les traductions déjà
+    chargées par le premier) ; ajout d'une garde de chargement unique de la librairie, symétrique
+    dans les deux plugins (voir issue #2 de face_tag_editor)
+    ajouté : support italien pour Trumbowyg (langue it.min.js)
+
 version 2.0d - 03/08/2026
     ajouté case à cocher optionnelle "ne pas enregistrer dans les métadonnées" (purge IPTC),
     désactivée par défaut, activable via $conf['geo_tag_editor_write_comment'] = 'onoff'
