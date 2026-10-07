@@ -121,11 +121,8 @@
             // Créer la carte centrée sur la France
             map = L.map('places-map').setView([46.603354, 1.888334], 6);
             
-            // Ajouter la couche OSM
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors',
-                maxZoom: 19
-            }).addTo(map);
+            // Fond de carte (noms en caractères latins + locaux, repli OSM raster)
+            window.GeoTagBasemap.add(L, map);
             
             // Clic sur la carte pour définir les coordonnées
             map.on('click', function(e) {

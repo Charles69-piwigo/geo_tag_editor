@@ -10,6 +10,12 @@ Has Settings: webmaster
 
 //============= VERSIONS ============================================
 /*
+version 2.2 - 07/10/2026
+    ajouté : fond de carte vectoriel OpenFreeMap (MapLibre GL) affichant les noms de lieux en
+    caractères latins + locaux (ex. "Beijing / 北京"), dans l'éditeur et dans l'admin Lieux
+    personnels ; repli automatique sur les tuiles OpenStreetMap raster si WebGL est indisponible
+    ou si le style ne se charge pas
+
 version 2.1 - 15/09/2026
     corrigé : conflit avec face_tag_editor quand les deux plugins chargent Trumbowyg sur la même
     page (le second chargement réinitialisait jQuery.trumbowyg et effaçait les traductions déjà
@@ -278,6 +284,9 @@ function geo_tag_load_css()
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" 
         crossorigin="" />
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css"
+        integrity="sha256-V2sIX92Uh6ZaGSFTKMHghsB85b9toJtmazgG09AI2uk="
+        crossorigin="" />
   ');
 }
 
@@ -329,6 +338,12 @@ function geo_tag_load_scripts()
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" 
           integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" 
           crossorigin=""></script>
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"
+          integrity="sha256-vpYzxNhw4m+zfxz+XFp3GBZnEUAD6hYgeseFDY2ordE="
+          crossorigin=""></script>
+  <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.0.22/leaflet-maplibre-gl.js"
+          integrity="sha256-WezY0rMnedJPG9Jrh8iJDyfkpueFjZk70X5Nh45tJnc="
+          crossorigin=""></script>
   <script>
     // Isoler Leaflet 1.9.4 pour éviter les conflits
     (function() {
@@ -353,6 +368,7 @@ function geo_tag_load_scripts()
   </script>
   ' . $trumbowyg_shared_scripts . '
   ' . $trumbowyg_lang_script . '
+  <script src="' . GEOTAG_PATH . 'js/geotag_basemap.js"></script>
   <script src="' . GEOTAG_PATH . 'template/geo_tag.js"></script>
   ');
 }

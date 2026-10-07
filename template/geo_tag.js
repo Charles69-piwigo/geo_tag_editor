@@ -534,11 +534,8 @@ function initMap() {
   // Créer la carte
   map = L.map('geotag-map').setView([centerLat, centerLon], centerZoom);
   
-  // Ajouter les tuiles OpenStreetMap
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    maxZoom: 19
-  }).addTo(map);
+  // Fond de carte (noms en caractères latins + locaux, repli OSM raster)
+  window.GeoTagBasemap.add(L, map);
   
   // Si l'image a déjà des coordonnées, placer le marqueur
   if (hasGPS && currentLatitude && currentLongitude) {
