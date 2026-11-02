@@ -10,9 +10,15 @@ Has Settings: webmaster
 
 //============= VERSIONS ============================================
 /*
+version 2.3 - 02/11/2026
+    ajouté : géotagage des fichiers PDF et vidéos mp4/mov/webm (comme PNG/GIF : enregistrement en
+    base de données), aperçu de la miniature (représentant) dans l'éditeur
+    modifié : le géotagage des non-JPEG (PNG, GIF, PDF) ne nécessite plus que piwigo-openstreetmap
+    soit actif (colonnes latitude/longitude du cœur de Piwigo)
+
 version 2.2 - 07/10/2026
-    ajouté : fond de carte vectoriel OpenFreeMap (MapLibre GL) affichant les noms de lieux en
-    caractères latins + locaux (ex. "Beijing / 北京"), dans l'éditeur et dans l'admin Lieux
+    ajouté : fond de carte vectoriel OpenFreeMap (MapLibre GL) afichant les noms de lieux en
+    caractères laftins + locaux (ex. "Beijing / 北京"), dans l'éditeur et dans l'admin Lieux
     personnels ; repli automatique sur les tuiles OpenStreetMap raster si WebGL est indisponible
     ou si le style ne se charge pas
 
@@ -391,7 +397,7 @@ function geo_tag_add_button()
   }
   
   $query = '
-SELECT path, file, comment
+SELECT path, file, comment, representative_ext
 FROM ' . IMAGES_TABLE . '
 WHERE id = ' . intval($image_id);
 
@@ -420,17 +426,12 @@ WHERE id = ' . intval($image_id);
   $ext = strtolower(pathinfo($image_path, PATHINFO_EXTENSION));
   $is_jpeg = in_array($ext, array('jpg', 'jpeg'));
 
-  if (!in_array($ext, array('jpg', 'jpeg', 'png', 'gif'))) {
+  if (!in_array($ext, array('jpg', 'jpeg', 'png', 'gif', 'pdf', 'mp4', 'mov', 'webm'))) {
     return;
   }
 
-  // Pour les non-JPEG : géotagage BDD uniquement, nécessite piwigo_openstreetmap
-  if (!$is_jpeg) {
-    $osm_plugins = get_db_plugins('active', 'piwigo-openstreetmap');
-    if (empty($osm_plugins)) {
-      return; // Pas de géotagage possible pour les non-JPEG sans OSM
-    }
-  }
+  // Pour les non-JPEG : géotagage BDD uniquement (colonnes latitude/longitude de piwigo_images,
+  // issues du cœur de Piwigo : aucune dépendance à piwigo_openstreetmap)
 
   $reader = new GPSMetadataReader();
   $gps_data = $is_jpeg ? $reader->readGPS($image_path) : array();
@@ -460,8 +461,17 @@ WHERE id = ' . intval($image_id);
     'id'   => $image_id,
     'path' => $row['path'],
     'file' => $row['file'],
+    'representative_ext' => $row['representative_ext'],
   ));
-  $image_src_url = trigger_change('get_original_url', get_root_url() . $row['path'], $src_image);
+  if (!in_array($ext, array('jpg', 'jpeg', 'png', 'gif'))) {
+    // PDF, vidéos : ne s'affichent pas dans <img>. On utilise la miniature (représentant) si
+    // elle existe, sinon chaîne vide (le JS affiche alors un cadre sans image)
+    $image_src_url = !empty($row['representative_ext'])
+      ? DerivativeImage::url(IMG_LARGE, $src_image)
+      : '';
+  } else {
+    $image_src_url = trigger_change('get_original_url', get_root_url() . $row['path'], $src_image);
+  }
 
   $button_data = array(
     'image_id' => $image_id,

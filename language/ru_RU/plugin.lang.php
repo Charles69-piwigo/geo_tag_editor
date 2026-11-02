@@ -192,7 +192,6 @@ $lang['(coordonnées GPS principales)'] = '(основные GPS-координ�
 $lang['GPSLatitudeRef / GPSLongitudeRef'] = 'GPSLatitudeRef / GPSLongitudeRef';
 $lang['(Nord/Sud, Est/Ouest)'] = '(Север/Юг, Восток/Запад)';
 $lang['Ces formats sont compatibles avec la plupart des logiciels de gestion de photos. Les tags GPS existants créés par d\'autres logiciels (Lightroom, digiKam, etc.) sont reconnus par geo_tag_editor.'] = 'Эти форматы совместимы с большинством программ управления фотографиями. Существующие GPS-теги, созданные другими программами (Lightroom, digiKam и т. д.), распознаются geo_tag_editor.';
-$lang['Pour les formats non-JPEG, l\'écriture dans les métadonnées du fichier n\'est pas possible : les coordonnées sont alors enregistrées uniquement en base de données.'] = 'Для не-JPEG форматов запись в метаданные файла невозможна: в этом случае координаты сохраняются только в базе данных.';
 $lang['Visualisation des résultats'] = 'Просмотр результатов';
 $lang['Pour visualiser les résultats sur une carte, il faut installer et activer un plugin de géolocalisation compatible avec Piwigo, comme :'] = 'Чтобы просматривать результаты на карте, необходимо установить и активировать плагин геолокации, совместимый с Piwigo, например:';
 $lang['Permissions requises'] = 'Необходимые права доступа';
@@ -208,5 +207,9 @@ $lang['La carte utilise :'] = 'Карта использует:';
 $lang['pour l\'interface de carte interactive'] = 'для интерактивного интерфейса карты';
 $lang['comme fond de carte'] = 'в качестве базовой карты';
 $lang['pour la recherche de lieux'] = 'для поиска мест';
+$lang['Fichiers autres que JPEG'] = 'Файлы, отличные от JPEG';
+$lang['Outre les JPEG, le plugin permet de géolocaliser les fichiers PNG, GIF, PDF et les vidéos (mp4, mov, webm).'] = 'Помимо JPEG, плагин позволяет геотегировать файлы PNG, GIF и PDF, а также видео (mp4, mov, webm).';
+$lang['Ces formats ne permettent pas l\'écriture dans les métadonnées du fichier : les coordonnées GPS et la description sont enregistrées uniquement dans la base de données de Piwigo. Le plugin piwigo-openstreetmap n\'est pas nécessaire pour cet enregistrement, mais un plugin de cartographie est utile pour afficher les résultats.'] = 'Эти форматы не позволяют записывать данные в метаданные файла: GPS-координаты и описание сохраняются только в базе данных Piwigo. Плагин piwigo-openstreetmap для этого не требуется, но плагин карт полезен для отображения результатов.';
+$lang['Pour les PDF et les vidéos, l\'éditeur affiche la miniature (image représentative) du fichier. Sans image représentative, la zone d\'aperçu reste vide.'] = 'Для PDF и видео редактор показывает миниатюру (репрезентативное изображение) файла. Без репрезентативного изображения область предпросмотра остаётся пустой.';
 
 ?>

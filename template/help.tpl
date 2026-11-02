@@ -62,7 +62,11 @@
     <li><strong>{'GPSLatitudeRef / GPSLongitudeRef'|@translate}</strong> {'(Nord/Sud, Est/Ouest)'|@translate}</li>
   </ul>
   <p>{'Ces formats sont compatibles avec la plupart des logiciels de gestion de photos. Les tags GPS existants créés par d\'autres logiciels (Lightroom, digiKam, etc.) sont reconnus par geo_tag_editor.'|@translate}</p>
-  <p>{'Pour les formats non-JPEG, l\'écriture dans les métadonnées du fichier n\'est pas possible : les coordonnées sont alors enregistrées uniquement en base de données.'|@translate}</p>
+
+  <h4>{'Fichiers autres que JPEG'|@translate}</h4>
+  <p>{'Outre les JPEG, le plugin permet de géolocaliser les fichiers PNG, GIF, PDF et les vidéos (mp4, mov, webm).'|@translate}</p>
+  <p>{'Ces formats ne permettent pas l\'écriture dans les métadonnées du fichier : les coordonnées GPS et la description sont enregistrées uniquement dans la base de données de Piwigo. Le plugin piwigo-openstreetmap n\'est pas nécessaire pour cet enregistrement, mais un plugin de cartographie est utile pour afficher les résultats.'|@translate}</p>
+  <p>{'Pour les PDF et les vidéos, l\'éditeur affiche la miniature (image représentative) du fichier. Sans image représentative, la zone d\'aperçu reste vide.'|@translate}</p>
 
   <h4>{'Visualisation des résultats'|@translate}</h4>
   <p>{'Pour visualiser les résultats sur une carte, il faut installer et activer un plugin de géolocalisation compatible avec Piwigo, comme :'|@translate}</p>

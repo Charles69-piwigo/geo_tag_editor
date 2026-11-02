@@ -190,7 +190,7 @@ $(document).on('click', '#geotag-open-editor', async function(e) {
       
       <!-- Zone image (gauche) -->
       <div class="modal-image-area">
-        <img src="${imageSrc}" alt="Image" />
+        ${imageSrc ? `<img src="${imageSrc}" alt="Image" />` : ''}
 
         <!-- Description de l'image (sous la photo) -->
         <div class="description-section">
